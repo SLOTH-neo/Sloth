@@ -4,28 +4,27 @@ local plr = services.Players.LocalPlayer
 local run = services.RunService
 local uis = services.UserInputService
 
--- [[ 🌸 櫻花玻璃配色方案 ]]
-local C = {
-    Accent = Color3.fromRGB(255, 120, 180), -- 貓貓粉
-    MainBG = Color3.fromRGB(15, 15, 18),   -- 深邃玻璃
-    BtnBG  = Color3.fromRGB(30, 30, 35),   -- 元件底色
-    Text   = Color3.fromRGB(220, 220, 225),
-    Stroke = Color3.fromRGB(255, 255, 255),
-}
-
 local function Tween(obj, info, prop)
     local t = ts:Create(obj, TweenInfo.new(unpack(info)), prop)
     t:Play()
     return t
 end
 
--- 建立 UI 基礎
+local C = {
+    Accent = Color3.fromRGB(255, 120, 180),
+    MainBG = Color3.fromRGB(15, 15, 18),
+    BtnBG  = Color3.fromRGB(30, 30, 35),
+    Text   = Color3.fromRGB(220, 220, 225),
+    Stroke = Color3.fromRGB(255, 255, 255),
+}
+
+-- 1. UI 基礎
 local main = Instance.new("ScreenGui", services.CoreGui)
-main.Name = "NekoFly_Ultimate_2026"
+main.Name = "NekoFly_Ultimate"
 main.ResetOnSpawn = false
 
 local Frame = Instance.new("Frame", main)
-Frame.Size = UDim2.new(0, 220, 0, 110) -- 稍微加高放穿牆按鈕
+Frame.Size = UDim2.new(0, 200, 0, 115) -- 加高一點點放穿牆
 Frame.Position = UDim2.new(0.1, 0, 0.4, 0)
 Frame.BackgroundColor3 = C.MainBG
 Frame.BackgroundTransparency = 0.1
@@ -35,132 +34,208 @@ Instance.new("UICorner", Frame).CornerRadius = UDim.new(0, 12)
 local GlassStroke = Instance.new("UIStroke", Frame)
 GlassStroke.Thickness = 1; GlassStroke.Color = C.Stroke; GlassStroke.Transparency = 0.85
 
--- 按鈕建立函數
-local function CreateBtn(text, pos, size)
+local function CreateStyledButton(name, text, pos, size)
     local b = Instance.new("TextButton", Frame)
-    b.Text = text; b.Position = pos; b.Size = size
-    b.BackgroundColor3 = C.BtnBG; b.TextColor3 = C.Text
-    b.Font = Enum.Font.GothamMedium; b.TextSize = 11; b.BorderSizePixel = 0
+    b.Name = name; b.Text = text; b.Position = pos; b.Size = size
+    b.BackgroundColor3 = C.BtnBG; b.TextColor3 = C.Text; b.Font = "GothamMedium"; b.TextSize = 11
     Instance.new("UICorner", b).CornerRadius = UDim.new(0, 6)
     b.MouseButton1Down:Connect(function() Tween(b, {0.1}, {Size = UDim2.new(size.X.Scale, size.X.Offset-3, size.Y.Scale, size.Y.Offset-3)}) end)
     b.MouseButton1Up:Connect(function() Tween(b, {0.2, Enum.EasingStyle.Back}, {Size = size}) end)
     return b
 end
 
--- 建立元件
-local up = CreateBtn("UP 🐾", UDim2.new(0.05, 0, 0.1, 0), UDim2.new(0, 44, 0, 28))
-local down = CreateBtn("DOWN 🐾", UDim2.new(0.05, 0, 0.4, 0), UDim2.new(0, 44, 0, 28))
-local plus = CreateBtn("+", UDim2.new(0.3, 0, 0.1, 0), UDim2.new(0, 35, 0, 28))
-local mine = CreateBtn("-", UDim2.new(0.3, 0, 0.4, 0), UDim2.new(0, 35, 0, 28))
-local onof = CreateBtn("貓飛行", UDim2.new(0.7, 0, 0.4, 0), UDim2.new(0, 55, 0, 28))
-local noclipBtn = CreateBtn("穿牆: 關", UDim2.new(0.05, 0, 0.72, 0), UDim2.new(0, 200, 0, 25))
+local up = CreateStyledButton("up", "UP 🐾", UDim2.new(0.05, 0, 0.08, 0), UDim2.new(0, 44, 0, 28))
+local down = CreateStyledButton("down", "DOWN 🐾", UDim2.new(0.05, 0, 0.36, 0), UDim2.new(0, 44, 0, 28))
+local plus = CreateStyledButton("plus", "+", UDim2.new(0.3, 0, 0.08, 0), UDim2.new(0, 35, 0, 28))
+local mine = CreateStyledButton("mine", "-", UDim2.new(0.3, 0, 0.36, 0), UDim2.new(0, 35, 0, 28))
+local onof = CreateStyledButton("onof", "貓飛行", UDim2.new(0.72, 0, 0.36, 0), UDim2.new(0, 50, 0, 28))
+local noclipBtn = CreateStyledButton("nc", "穿牆模式: 關", UDim2.new(0.05, 0, 0.7, 0), UDim2.new(0, 185, 0, 25))
 
-local title = Instance.new("TextLabel", Frame)
-title.Text = "貓貓飛行"; title.Size = UDim2.new(0, 80, 0, 28); title.Position = UDim2.new(0.52, 0, 0.1, 0)
-title.TextColor3 = C.Accent; title.Font = Enum.Font.GothamBold; title.TextSize = 13; title.BackgroundTransparency = 1
+local TextLabel = Instance.new("TextLabel", Frame)
+TextLabel.Text = "貓貓飛行 V3"; TextLabel.Size = UDim2.new(0, 80, 0, 28); TextLabel.Position = UDim2.new(0.52, 0, 0.08, 0)
+TextLabel.TextColor3 = C.Accent; TextLabel.Font = "GothamBold"; TextLabel.TextSize = 13; TextLabel.BackgroundTransparency = 1
 
 local speed = Instance.new("TextLabel", Frame)
-speed.Text = "1"; speed.Size = UDim2.new(0, 40, 0, 28); speed.Position = UDim2.new(0.52, 0, 0.4, 0)
-speed.TextColor3 = Color3.new(1, 1, 1); speed.Font = Enum.Font.GothamBold; speed.TextSize = 14; speed.BackgroundTransparency = 1
+speed.Text = "1"; speed.Size = UDim2.new(0, 40, 0, 28); speed.Position = UDim2.new(0.52, 0, 0.36, 0)
+speed.TextColor3 = Color3.new(1, 1, 1); speed.Font = "GothamBold"; speed.TextSize = 14; speed.BackgroundTransparency = 1
 
-local close = CreateBtn("🐱", UDim2.new(0, -35, 0, 0), UDim2.new(0, 30, 0, 30))
-local mini = CreateBtn("-", UDim2.new(1, 5, 0, 0), UDim2.new(0, 30, 0, 30))
-local mini2 = CreateBtn("+", UDim2.new(1, 5, 0, 35), UDim2.new(0, 30, 0, 30)); mini2.Visible = false
+local closebutton = CreateStyledButton("Close", "🐱", UDim2.new(0, -35, 0, 0), UDim2.new(0, 30, 0, 30))
+local mini = CreateStyledButton("minimize", "-", UDim2.new(1, 5, 0, 0), UDim2.new(0, 30, 0, 30))
+local mini2 = CreateStyledButton("minimize2", "+", UDim2.new(1, 5, 0, 35), UDim2.new(0, 30, 0, 30)); mini2.Visible = false
 
--- 🌈 霓虹呼吸動畫
 task.spawn(function()
     while main.Parent do
         local hue = tick() % 5 / 5
         local color = Color3.fromHSV(hue, 0.5, 1)
         Tween(GlassStroke, {1}, {Color = color})
-        Tween(title, {1}, {TextColor3 = color})
+        Tween(TextLabel, {1}, {TextColor3 = color})
         task.wait(1)
     end
 end)
 
--- [[ 🧠 核心邏輯整合 ]]
-local F_Class = {}
-F_Class.__index = F_Class
-function F_Class.new()
-    local self = setmetatable({}, F_Class)
-    self.v = 1; self.f = false; self.n = false; self.c = {}; self.l = nil; self.w = {}; self.p = {}; self.pl = plr
-    self:uC(); return self
-end
+-- [[ 🧠 核心邏輯 - 你的飛行與穿牆 ]]
+local speeds = 1
+local nowe = false
+local tpwalking = false
+local noclip = false
+local speaker = plr
 
-function F_Class:uC() self.ch = self.pl.Character; if self.ch then self.h = self.ch:FindFirstChildWhichIsA("Humanoid"); self.r = self.ch:FindFirstChild("HumanoidRootPart") end end
-function F_Class:sW() self:sW2(); for i=1, self.v do local x = run.Heartbeat:Connect(function() if self.ch and self.h and self.h.MoveDirection.Magnitude > 0 then self.ch:TranslateBy(self.h.MoveDirection) end end) table.insert(self.w, x) end end
-function F_Class:sW2() for _,x in ipairs(self.w) do x:Disconnect() end; self.w = {} end
-function F_Class:clP() for _,x in ipairs(self.p) do x:Destroy() end; self.p = {} end
-
-function F_Class:aN() -- 穿牆開啟
-    self:sN()
-    self.nc = self.ch.DescendantAdded:Connect(function(x) if x:IsA("BasePart") then x.CanCollide = false end end)
-    self.nl = run.Heartbeat:Connect(function() if self.ch and self.n then for _,x in ipairs(self.ch:GetDescendants()) do if x:IsA("BasePart") then x.CanCollide = false end end end end)
-end
-function F_Class:rN() if self.nc then self.nc:Disconnect() end; if self.nl then self.nl:Disconnect() end; for _,x in ipairs(self.ch:GetDescendants()) do if x:IsA("BasePart") then x.CanCollide = true end end end
-function F_Class:sN() if self.nc then self.nc:Disconnect() end; if self.nl then self.nl:Disconnect() end end
-
-function F_Class:tF() -- 飛行開關
-    self:uC(); if not self.ch then return end
-    self.f = not self.f
-    onof.Text = self.f and "停止" or "貓飛行"
-    Tween(onof, {0.2}, {BackgroundColor3 = self.f and C.Accent or C.BtnBG})
-    if self.f then
-        self.ch.Animate.Disabled = true
-        for _,v in next, self.h:GetPlayingAnimationTracks() do v:AdjustSpeed(0) end
-        self:sW(); self:sR15()
-    else
-        self:sW2(); self:clP(); self.ch.Animate.Disabled = false; self.h.PlatformStand = false
+-- 穿牆邏輯 (Heartbeat 強制)
+run.Heartbeat:Connect(function()
+    if noclip and speaker.Character then
+        for _, v in pairs(speaker.Character:GetDescendants()) do
+            if v:IsA("BasePart") then v.CanCollide = false end
+        end
     end
-end
-
-function F_Class:sR15()
-    local t = self.ch:FindFirstChild("UpperTorso") or self.ch:FindFirstChild("Torso")
-    local g = Instance.new("BodyGyro", t); g.P = 9e4; g.maxTorque = Vector3.new(9e9, 9e9, 9e9); g.cframe = t.CFrame
-    local v = Instance.new("BodyVelocity", t); v.velocity = Vector3.new(0, 0.1, 0); v.maxForce = Vector3.new(9e9, 9e9, 9e9)
-    table.insert(self.p, g); table.insert(self.p, v); self.h.PlatformStand = true
-    local cs = 0; local m = 50
-    self.l = run.Heartbeat:Connect(function()
-        if not self.f then self.l:Disconnect(); return end
-        local move = Vector3.new(0,0,0)
-        if uis:IsKeyDown(Enum.KeyCode.W) then move = move + Camera.CFrame.LookVector end
-        if uis:IsKeyDown(Enum.KeyCode.S) then move = move - Camera.CFrame.LookVector end
-        if uis:IsKeyDown(Enum.KeyCode.A) then move = move - Camera.CFrame.RightVector end
-        if uis:IsKeyDown(Enum.KeyCode.D) then move = move + Camera.CFrame.RightVector end
-        if move.Magnitude > 0 then cs = math.min(cs + 1, m) else cs = math.max(cs - 1, 0) end
-        v.velocity = move.Unit * cs * self.v; g.cframe = Camera.CFrame
-    end)
-end
-
-local fm = F_Class.new()
-
--- [[ 按鈕功能綁定 ]]
-onof.MouseButton1Click:Connect(function() fm:tF() end)
-
-noclipBtn.MouseButton1Click:Connect(function()
-    fm.n = not fm.n
-    noclipBtn.Text = fm.n and "穿牆: 開 🐾" or "穿牆: 關"
-    Tween(noclipBtn, {0.2}, {BackgroundColor3 = fm.n and C.Accent or C.BtnBG})
-    if fm.n then fm:aN() else fm:rN() end
 end)
 
-plus.MouseButton1Click:Connect(function() fm.v = math.min(fm.v + 1, 150); speed.Text = fm.v; if fm.f then fm:sW() end end)
-mine.MouseButton1Click:Connect(function() fm.v = math.max(fm.v - 1, 1); speed.Text = fm.v; if fm.f then fm:sW() end end)
+noclipBtn.MouseButton1Click:Connect(function()
+    noclip = not noclip
+    noclipBtn.Text = noclip and "穿牆模式: 開 🐾" or "穿牆模式: 關"
+    Tween(noclipBtn, {0.2}, {BackgroundColor3 = noclip and C.Accent or C.BtnBG})
+end)
 
-local mt; local function sm(x) if mt then mt:Disconnect() end; mt = run.Heartbeat:Connect(function() if fm.r then fm.r.CFrame = fm.r.CFrame * CFrame.new(0, x, 0) end end) end
-local function em() if mt then mt:Disconnect() end end
-up.MouseButton1Down:Connect(function() sm(1) end); up.MouseButton1Up:Connect(em); up.MouseLeave:Connect(em)
-down.MouseButton1Down:Connect(function() sm(-1) end); down.MouseButton1Up:Connect(em); down.MouseLeave:Connect(em)
+-- 你的飛行按鍵控制與物理
+onof.MouseButton1Click:Connect(function()
+    if nowe == true then
+        nowe = false
+        speaker.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.Climbing,true)
+        speaker.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.FallingDown,true)
+        speaker.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.Flying,true)
+        speaker.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.Freefall,true)
+        speaker.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.GettingUp,true)
+        speaker.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.Jumping,true)
+        speaker.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.Landed,true)
+        speaker.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.Physics,true)
+        speaker.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.PlatformStanding,true)
+        speaker.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.Ragdoll,true)
+        speaker.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.Running,true)
+        speaker.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.RunningNoPhysics,true)
+        speaker.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.Seated,true)
+        speaker.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.StrafingNoPhysics,true)
+        speaker.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.Swimming,true)
+        speaker.Character.Humanoid:ChangeState(Enum.HumanoidStateType.RunningNoPhysics)
+        Tween(onof, {0.2}, {BackgroundColor3 = C.BtnBG})
+        tpwalking = false
+    else 
+        nowe = true
+        Tween(onof, {0.2}, {BackgroundColor3 = C.Accent})
+        
+        -- 你的 tpwalking 循環
+        tpwalking = true
+        for i = 1, speeds do
+            spawn(function()
+                local hb = run.Heartbeat    
+                while tpwalking and hb:Wait() and speaker.Character and speaker.Character:FindFirstChild("Humanoid") do
+                    if speaker.Character.Humanoid.MoveDirection.Magnitude > 0 then
+                        speaker.Character:TranslateBy(speaker.Character.Humanoid.MoveDirection)
+                    end
+                end
+            end)
+        end
+        
+        speaker.Character.Animate.Disabled = true
+        local Hum = speaker.Character:FindFirstChildOfClass("Humanoid")
+        for i,v in next, Hum:GetPlayingAnimationTracks() do v:AdjustSpeed(0) end
+        
+        speaker.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.Climbing,false)
+        speaker.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.FallingDown,false)
+        speaker.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.Flying,false)
+        speaker.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.Freefall,false)
+        speaker.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.GettingUp,false)
+        speaker.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.Jumping,false)
+        speaker.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.Landed,false)
+        speaker.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.Physics,false)
+        speaker.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.PlatformStanding,false)
+        speaker.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.Ragdoll,false)
+        speaker.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.Running,false)
+        speaker.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.RunningNoPhysics,false)
+        speaker.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.Seated,false)
+        speaker.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.StrafingNoPhysics,false)
+        speaker.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.Swimming,false)
+        speaker.Character.Humanoid:ChangeState(Enum.HumanoidStateType.Swimming)
+
+        -- 核心物理引擎 (你的 Body Movers)
+        local torso = speaker.Character:FindFirstChild("UpperTorso") or speaker.Character:FindFirstChild("Torso")
+        local ctrl = {f = 0, b = 0, l = 0, r = 0}
+        local lastctrl = {f = 0, b = 0, l = 0, r = 0}
+        local maxspeed = 50
+        local curspeed = 0
+
+        local bg = Instance.new("BodyGyro", torso)
+        bg.P = 9e4; bg.maxTorque = Vector3.new(9e9, 9e9, 9e9); bg.cframe = torso.CFrame
+        local bv = Instance.new("BodyVelocity", torso)
+        bv.velocity = Vector3.new(0,0.1,0); bv.maxForce = Vector3.new(9e9, 9e9, 9e9)
+
+        speaker.Character.Humanoid.PlatformStand = true
+
+        -- 你的鍵盤監聽循環
+        spawn(function()
+            while nowe do
+                run.RenderStepped:Wait()
+                ctrl.f = uis:IsKeyDown(Enum.KeyCode.W) and 1 or 0
+                ctrl.b = uis:IsKeyDown(Enum.KeyCode.S) and -1 or 0
+                ctrl.l = uis:IsKeyDown(Enum.KeyCode.A) and -1 or 0
+                ctrl.r = uis:IsKeyDown(Enum.KeyCode.D) and 1 or 0
+
+                if ctrl.l + ctrl.r ~= 0 or ctrl.f + ctrl.b ~= 0 then
+                    curspeed = curspeed + .5 + (curspeed/maxspeed)
+                    if curspeed > maxspeed then curspeed = maxspeed end
+                elseif not (ctrl.l + ctrl.r ~= 0 or ctrl.f + ctrl.b ~= 0) and curspeed ~= 0 then
+                    curspeed = curspeed - 1
+                    if curspeed < 0 then curspeed = 0 end
+                end
+                if (ctrl.l + ctrl.r) ~= 0 or (ctrl.f + ctrl.b) ~= 0 then
+                    bv.velocity = ((workspace.CurrentCamera.CFrame.lookVector * (ctrl.f+ctrl.b)) + ((workspace.CurrentCamera.CFrame * CFrame.new(ctrl.l+ctrl.r,(ctrl.f+ctrl.b)*.2,0).p) - workspace.CurrentCamera.CFrame.p)) * curspeed
+                    lastctrl = {f = ctrl.f, b = ctrl.b, l = ctrl.l, r = ctrl.r}
+                elseif (ctrl.l + ctrl.r) == 0 and (ctrl.f + ctrl.b) == 0 and curspeed ~= 0 then
+                    bv.velocity = ((workspace.CurrentCamera.CFrame.lookVector * (lastctrl.f+lastctrl.b)) + ((workspace.CurrentCamera.CFrame * CFrame.new(lastctrl.l+lastctrl.r,(lastctrl.f+lastctrl.b)*.2,0).p) - workspace.CurrentCamera.CFrame.p)) * curspeed
+                else
+                    bv.velocity = Vector3.new(0,0,0)
+                end
+                bg.cframe = workspace.CurrentCamera.CFrame * CFrame.Angles(-math.rad((ctrl.f+ctrl.b)*50*curspeed/maxspeed),0,0)
+            end
+            bg:Destroy(); bv:Destroy()
+            if speaker.Character:FindFirstChild("Humanoid") then
+                speaker.Character.Humanoid.PlatformStand = false
+                speaker.Character.Animate.Disabled = false
+            end
+        end)
+    end
+end)
+
+-- 你的速度與上下按鈕
+local function updateSpeed()
+    speed.Text = speeds
+    if nowe then
+        tpwalking = false; wait()
+        tpwalking = true
+        for i = 1, speeds do
+            spawn(function()
+                local hb = run.Heartbeat
+                while tpwalking and hb:Wait() and speaker.Character:FindFirstChild("Humanoid") do
+                    if speaker.Character.Humanoid.MoveDirection.Magnitude > 0 then speaker.Character:TranslateBy(speaker.Character.Humanoid.MoveDirection) end
+                end
+            end)
+        end
+    end
+end
+plus.MouseButton1Click:Connect(function() speeds = math.min(speeds + 1, 150) updateSpeed() end)
+mine.MouseButton1Click:Connect(function() speeds = math.max(speeds - 1, 1) updateSpeed() end)
+
+local tis; up.MouseButton1Down:Connect(function() tis = true; while tis do wait() speaker.Character:TranslateBy(Vector3.new(0,1,0)) end end)
+up.MouseButton1Up:Connect(function() tis = false end); up.MouseLeave:Connect(function() tis = false end)
+
+local dis; down.MouseButton1Down:Connect(function() dis = true; while dis do wait() speaker.Character:TranslateBy(Vector3.new(0,-1,0)) end end)
+down.MouseButton1Up:Connect(function() dis = false end); down.MouseLeave:Connect(function() dis = false end)
 
 -- UI 控制
 local function toggleVis(v) for _, x in pairs(Frame:GetChildren()) do if x:IsA("TextButton") or x:IsA("TextLabel") then x.Visible = v end end end
-mini.MouseButton1Click:Connect(function() toggleVis(false); mini2.Visible = true; close.Visible = true; Tween(Frame, {0.3}, {Size = UDim2.new(0, 45, 0, 45)}) end)
-mini2.MouseButton1Click:Connect(function() Tween(Frame, {0.3}, {Size = UDim2.new(0, 220, 0, 110)}); task.wait(0.3); toggleVis(true); mini2.Visible = false end)
-close.MouseButton1Click:Connect(function() if fm.f then fm:tF() end; fm:sN(); main:Destroy() end)
+mini.MouseButton1Click:Connect(function() toggleVis(false); mini2.Visible = true; closebutton.Visible = true; Tween(Frame, {0.3}, {Size = UDim2.new(0, 45, 0, 45)}) end)
+mini2.MouseButton1Click:Connect(function() Tween(Frame, {0.3}, {Size = UDim2.new(0, 200, 0, 115)}); task.wait(0.3); toggleVis(true); mini2.Visible = false end)
+closebutton.MouseButton1Click:Connect(function() nowe = false; noclip = false; main:Destroy() end)
 
--- 拖動支援
+-- 拖動
 local dStart, sPos, drag; Frame.InputBegan:Connect(function(i) if i.UserInputType == Enum.UserInputType.MouseButton1 then drag = true; dStart = i.Position; sPos = Frame.Position end end)
 uis.InputChanged:Connect(function(i) if drag and i.UserInputType == Enum.UserInputType.MouseMovement then local d = i.Position - dStart; Frame.Position = UDim2.new(sPos.X.Scale, sPos.X.Offset + d.X, sPos.Y.Scale, sPos.Y.Offset + d.Y) end end)
 uis.InputEnded:Connect(function() drag = false end)
-
-print("🌸 貓貓飛行  整合完成！穿牆模式已就緒喵～")
