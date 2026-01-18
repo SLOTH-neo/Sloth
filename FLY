@@ -18,13 +18,12 @@ local C = {
     Stroke = Color3.fromRGB(255, 255, 255),
 }
 
--- 1. UI 基礎
 local main = Instance.new("ScreenGui", services.CoreGui)
-main.Name = "NekoFly_Ultimate"
+main.Name = "NekoFly_Fixed"
 main.ResetOnSpawn = false
 
 local Frame = Instance.new("Frame", main)
-Frame.Size = UDim2.new(0, 200, 0, 115) -- 加高一點點放穿牆
+Frame.Size = UDim2.new(0, 200, 0, 115) 
 Frame.Position = UDim2.new(0.1, 0, 0.4, 0)
 Frame.BackgroundColor3 = C.MainBG
 Frame.BackgroundTransparency = 0.1
@@ -63,25 +62,15 @@ local closebutton = CreateStyledButton("Close", "🐱", UDim2.new(0, -35, 0, 0),
 local mini = CreateStyledButton("minimize", "-", UDim2.new(1, 5, 0, 0), UDim2.new(0, 30, 0, 30))
 local mini2 = CreateStyledButton("minimize2", "+", UDim2.new(1, 5, 0, 35), UDim2.new(0, 30, 0, 30)); mini2.Visible = false
 
-task.spawn(function()
-    while main.Parent do
-        local hue = tick() % 5 / 5
-        local color = Color3.fromHSV(hue, 0.5, 1)
-        Tween(GlassStroke, {1}, {Color = color})
-        Tween(TextLabel, {1}, {TextColor3 = color})
-        task.wait(1)
-    end
-end)
-
--- [[ 🧠 核心邏輯 - 你的飛行與穿牆 ]]
+-- [[ 🧠 核心邏輯 - 你的邏輯原生移植版 ]]
 local speeds = 1
 local nowe = false
 local tpwalking = false
 local noclip = false
 local speaker = plr
 
--- 穿牆邏輯 (Heartbeat 強制)
-run.Heartbeat:Connect(function()
+-- 穿牆監聽 (完全使用原版寫法，不與飛行衝突)
+run.Stepped:Connect(function()
     if noclip and speaker.Character then
         for _, v in pairs(speaker.Character:GetDescendants()) do
             if v:IsA("BasePart") then v.CanCollide = false end
@@ -95,7 +84,6 @@ noclipBtn.MouseButton1Click:Connect(function()
     Tween(noclipBtn, {0.2}, {BackgroundColor3 = noclip and C.Accent or C.BtnBG})
 end)
 
--- 你的飛行按鍵控制與物理
 onof.MouseButton1Click:Connect(function()
     if nowe == true then
         nowe = false
@@ -121,7 +109,6 @@ onof.MouseButton1Click:Connect(function()
         nowe = true
         Tween(onof, {0.2}, {BackgroundColor3 = C.Accent})
         
-        -- 你的 tpwalking 循環
         tpwalking = true
         for i = 1, speeds do
             spawn(function()
@@ -155,8 +142,8 @@ onof.MouseButton1Click:Connect(function()
         speaker.Character.Humanoid:SetStateEnabled(Enum.HumanoidStateType.Swimming,false)
         speaker.Character.Humanoid:ChangeState(Enum.HumanoidStateType.Swimming)
 
-        -- 核心物理引擎 (你的 Body Movers)
-        local torso = speaker.Character:FindFirstChild("UpperTorso") or speaker.Character:FindFirstChild("Torso")
+        local isR6 = speaker.Character.Humanoid.RigType == Enum.HumanoidRigType.R6
+        local torso = isR6 and speaker.Character:FindFirstChild("Torso") or speaker.Character:FindFirstChild("UpperTorso")
         local ctrl = {f = 0, b = 0, l = 0, r = 0}
         local lastctrl = {f = 0, b = 0, l = 0, r = 0}
         local maxspeed = 50
@@ -169,7 +156,6 @@ onof.MouseButton1Click:Connect(function()
 
         speaker.Character.Humanoid.PlatformStand = true
 
-        -- 你的鍵盤監聽循環
         spawn(function()
             while nowe do
                 run.RenderStepped:Wait()
@@ -204,7 +190,7 @@ onof.MouseButton1Click:Connect(function()
     end
 end)
 
--- 你的速度與上下按鈕
+-- 速度與上下
 local function updateSpeed()
     speed.Text = speeds
     if nowe then
@@ -225,7 +211,6 @@ mine.MouseButton1Click:Connect(function() speeds = math.max(speeds - 1, 1) updat
 
 local tis; up.MouseButton1Down:Connect(function() tis = true; while tis do wait() speaker.Character:TranslateBy(Vector3.new(0,1,0)) end end)
 up.MouseButton1Up:Connect(function() tis = false end); up.MouseLeave:Connect(function() tis = false end)
-
 local dis; down.MouseButton1Down:Connect(function() dis = true; while dis do wait() speaker.Character:TranslateBy(Vector3.new(0,-1,0)) end end)
 down.MouseButton1Up:Connect(function() dis = false end); down.MouseLeave:Connect(function() dis = false end)
 
