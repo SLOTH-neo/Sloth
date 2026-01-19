@@ -10,6 +10,7 @@ local Whitelist = {
     ["Zn6xx"] = true,
     ["jay04_23"] = true, 
     ["robloxasdft114"] = true,
+    ["YuXin_107"] = true,
     ["yoyowww99100"] = true
 }
 
