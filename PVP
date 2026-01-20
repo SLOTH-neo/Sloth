@@ -1,5 +1,4 @@
 -- [[PVP]] --
-
 local Players           = game:GetService("Players")
 local Player            = Players.LocalPlayer
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -7,7 +6,7 @@ local RunService        = game:GetService("RunService")
 local Camera            = workspace.CurrentCamera
 
 -- =============================================================
--- 🛠️ 1. 基礎工具與安全檢查 (已移除外部 FPS 連結)
+-- 🛠️ 1. 基礎工具與安全檢查
 -- =============================================================
 local function SafeWaitForChild(parent, childName)
     local success, result = pcall(function() return parent:WaitForChild(childName, 5) end)
@@ -34,10 +33,8 @@ end
 local function GetRandomValidPart(target)
     local allParts = target:GetDescendants()
     local validParts = {}
-    local humanoidRootPart = target:FindFirstChild("HumanoidRootPart")
-    local boneParts = humanoidRootPart and humanoidRootPart.Parent:GetDescendants() or {}
     for _, part in ipairs(allParts) do
-        if part:IsA("BasePart") and part.CanCollide and table.find(boneParts, part) then
+        if part:IsA("BasePart") and part.CanCollide then
             table.insert(validParts, part)
         end
     end
@@ -45,8 +42,69 @@ local function GetRandomValidPart(target)
 end
 
 -- =============================================================
--- 👀 2. 視野與移動加速系統 (對接主腳本變數)
+-- 🚀 2. 異步攻擊分配器 (Async Dispatcher)
 -- =============================================================
+local function FireAttackAsync(targetPart, enemyTable, regAtk, regHit, delay)
+    -- 使用 task.spawn 實現異步，完全不佔用主線程等待時間
+    task.spawn(function()
+        pcall(function()
+            regAtk:FireServer(delay)
+            regHit:FireServer(targetPart, enemyTable)
+        end)
+    end)
+end
+
+-- =============================================================
+-- ⚔️ 3. 攻擊循環引擎
+-- =============================================================
+task.spawn(function()
+    while true do
+        local delay = (_G.Settings and _G.Settings.ClickDelay) or 0.1
+        task.wait(delay)
+        
+        if _G.NekoRunning and _G.NekoAttack and _G.Settings.Mode ~= "None" then
+            pcall(function()
+                local char = Player.Character
+                local equipped = char and char:FindFirstChildOfClass("Tool")
+                
+                if equipped and equipped.ToolTip ~= "Gun" then
+                    local OthersEnemies = {}
+                    local _, _, regAtk, regHit, EnemiesFolder = CheckAndGetCoreComponents()
+                    
+                    if EnemiesFolder and regAtk and regHit then
+                        -- 獲取目標 (怪物/玩家)
+                        local Part1 = (_G.Settings.Mode == "Mob" or _G.Settings.Mode == "All") and ProcessEnemies(OthersEnemies, EnemiesFolder) or nil
+                        local Part2 = (_G.Settings.Mode == "All") and ProcessRealPlayers(OthersEnemies) or nil
+                        local target = Part1 or Part2
+                        
+                        if target and #OthersEnemies > 0 then
+                            -- 🌟 異曲同步實踐：一次循環噴射多個攻擊包
+                            local multiplier = (_G.Settings.AttackMultiplier or 1)
+                            for i = 1, multiplier do
+                                FireAttackAsync(target, OthersEnemies, regAtk, regHit, delay)
+                            end
+                        end
+                    end
+                end
+            end)
+        end
+    end
+end)
+
+-- =============================================================
+-- 🏃 4. 運動與視野系統 (對接 _G 變數)
+-- =============================================================
+RunService.Heartbeat:Connect(function()
+    if not _G.NekoRunning or not _G.Settings or not _G.Settings.SpeedEnabled then return end
+    local char = Player.Character
+    if char and char:FindFirstChild("Humanoid") then
+        local hum = char.Humanoid
+        if hum.MoveDirection.Magnitude > 0 then
+            char:TranslateBy(hum.MoveDirection * ((_G.Settings.CatSpeedValue or 50) / 10))
+        end
+    end
+end)
+
 task.spawn(function()
     while true do
         if _G.NekoRunning and _G.Settings then
@@ -59,112 +117,8 @@ task.spawn(function()
     end
 end)
 
-RunService.Heartbeat:Connect(function()
-    if not _G.NekoRunning or not _G.Settings or not _G.Settings.SpeedEnabled then return end
-    local char = Player.Character
-    if char and char:FindFirstChild("Humanoid") then
-        local hum = char.Humanoid
-        if hum.MoveDirection.Magnitude > 0 then
-            char:TranslateBy(hum.MoveDirection * ((_G.Settings.CatSpeedValue or 50) / 10))
-        end
-    end
-end)
-
 -- =============================================================
--- 🔥 3. 自動 V4 覺醒系統
--- =============================================================
-task.spawn(function()
-    while true do
-        task.wait(1)
-        if _G.NekoRunning and _G.AutoV4 then
-            pcall(function()
-                local char = Player.Character
-                local backpack = Player:FindFirstChild("Backpack")
-                local Awakening = (char and char:FindFirstChild("Awakening")) or 
-                                  (backpack and backpack:FindFirstChild("Awakening"))
-                
-                if Awakening then
-                    local RemoteFunc = Awakening:FindFirstChild("RemoteFunction")
-                    if RemoteFunc and RemoteFunc:IsA("RemoteFunction") then
-                        RemoteFunc:InvokeServer(true)
-                    end
-                end
-            end)
-        end
-    end
-end)
-
--- =============================================================
--- ⚔️ 4. 神刀攻擊引擎 (完全還原主人邏輯)
--- =============================================================
-local FastAttack = {
-    Distance = 3000,
-    attackMobs = true,
-    attackPlayers = true
-}
-
-local function ProcessEnemies(OthersEnemies, Folder)
-    if not Folder or not FastAttack.attackMobs then return nil end
-    local BasePart = nil
-    for _, Enemy in ipairs(Folder:GetChildren()) do
-        if Enemy == Player.Character or not IsAlive(Enemy) then continue end
-        local foundPart = GetRandomValidPart(Enemy)
-        if foundPart and Player:DistanceFromCharacter(foundPart.Position) < (_G.Settings.Distance or FastAttack.Distance) then
-            if _G.Settings.PullEnemies then
-                local eRoot = Enemy:FindFirstChild("HumanoidRootPart")
-                local myRoot = Player.Character and Player.Character:FindFirstChild("HumanoidRootPart")
-                if eRoot and myRoot then eRoot.CFrame = myRoot.CFrame * CFrame.new(0, 0, -3) end
-            end
-            table.insert(OthersEnemies, {Enemy, foundPart})
-            BasePart = foundPart
-        end
-    end
-    return BasePart
-end
-
-local function ProcessRealPlayers(OthersEnemies)
-    if not FastAttack.attackPlayers then return nil end
-    local BasePart = nil
-    for _, OtherPlayer in ipairs(Players:GetPlayers()) do
-        if OtherPlayer == Player then continue end
-        local OtherChar = OtherPlayer.Character
-        if not IsAlive(OtherChar) then continue end
-        local foundPart = GetRandomValidPart(OtherChar)
-        if foundPart and Player:DistanceFromCharacter(foundPart.Position) < (_G.Settings.Distance or FastAttack.Distance) then
-            table.insert(OthersEnemies, {OtherChar, foundPart})
-            BasePart = foundPart
-        end
-    end
-    return BasePart
-end
-
-task.spawn(function()
-    while true do
-        local delay = (_G.Settings and _G.Settings.ClickDelay) or 0.1
-        task.wait(delay)
-        if _G.NekoRunning and _G.NekoAttack and _G.Settings.Mode ~= "None" then
-            pcall(function()
-                local Equipped = Player.Character and Player.Character:FindFirstChildOfClass("Tool")
-                if Equipped and Equipped.ToolTip ~= "Gun" then
-                    local OthersEnemies = {}
-                    local _, _, regAtk, regHit, EnemiesFolder = CheckAndGetCoreComponents()
-                    if EnemiesFolder then
-                        local Part1 = (_G.Settings.Mode == "Mob" or _G.Settings.Mode == "All") and ProcessEnemies(OthersEnemies, EnemiesFolder) or nil
-                        local Part2 = (_G.Settings.Mode == "All") and ProcessRealPlayers(OthersEnemies) or nil
-                        local TargetPart = Part1 or Part2
-                        if TargetPart and #OthersEnemies > 0 and regAtk and regHit then
-                            regAtk:FireServer(delay)
-                            regHit:FireServer(TargetPart, OthersEnemies)
-                        end
-                    end
-                end
-            end)
-        end
-    end
-end)
-
--- =============================================================
--- 📍 5. 智慧黏人引擎
+-- 📍 5. 智慧黏人引擎 (PVP 必備)
 -- =============================================================
 RunService.Heartbeat:Connect(function()
     if _G.NekoRunning and _G.Settings.StickyEnabled and _G.Settings.StickyTarget then
@@ -175,9 +129,8 @@ RunService.Heartbeat:Connect(function()
                 local myRoot = myChar.HumanoidRootPart
                 local tRoot = tChar.HumanoidRootPart
                 local goalCF = tRoot.CFrame * (_G.Settings.StickyOffset or CFrame.new(3, 0, 7))
-                local dist = (myRoot.Position - goalCF.Position).Magnitude
                 
-                if dist > (_G.Settings.SnapDistance or 500) then
+                if (myRoot.Position - goalCF.Position).Magnitude > (_G.Settings.SnapDistance or 500) then
                     myRoot.CFrame = goalCF 
                 else
                     myRoot.CFrame = myRoot.CFrame:Lerp(goalCF, _G.Settings.LerpSpeed or 0.35)
@@ -187,4 +140,4 @@ RunService.Heartbeat:Connect(function()
     end
 end)
 
-print("🐾 NEKO 核心功能 (PVP) 已清理外部連結並完成對接喵！")
+print("🐾 NEKO PROJECT 完全體 (異步攻擊版) 載入成功喵！")
