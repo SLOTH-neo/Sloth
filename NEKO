@@ -270,7 +270,7 @@ for _, v in pairs(Workspace:GetChildren()) do
 end
 
 task.spawn(function()
-    while task.wait(1) do
+    while task.wait(0.5) do
         pcall(function()
             localPlayer.CameraMaxZoomDistance = 1000
         end)
@@ -300,6 +300,16 @@ task.spawn(function()
                 Remote:InvokeServer("Buso")
             end
         end)
+    end
+end)
+
+task.spawn(function()
+    while task.wait() do
+        if _G.NekoAttack then
+            pcall(function()
+                Remote:InvokeServer("Attack") -- 這裡重新補上基礎攻擊遠端，確保開關有效
+            end)
+        end
     end
 end)
 
