@@ -17,7 +17,7 @@ _G.Settings = {
     PullEnemies   = false,
     Mode          = "None",
     FOV           = 80,
-    MaxZoom       = 128,
+    MaxZoom       = 1000,
     CatSpeedValue = 50,
     SpeedEnabled  = false,
     InfJump       = false,
@@ -29,7 +29,8 @@ _G.Settings = {
     SnapDistance  = 500,
     LerpSpeed     = 0.35,
     AutoBuyFruit  = false,
-    FruitESP      = false
+    FruitESP      = false,
+    AutoPickFruit = false
 }
 
 _G.NekoRunning = true
@@ -78,20 +79,17 @@ function TogglePlayerMenu(myUI)
     SG.Name = "NekoStickyMenu"
     pcall(function() SG.Parent = CoreGui end)
     if not SG.Parent then SG.Parent = localPlayer.PlayerGui end
-
     local Frame = Instance.new("Frame", SG)
     Frame.Size = UDim2.new(0, 250, 0, 350)
     Frame.Position = UDim2.new(0.5, -125, 0.5, -175)
     Frame.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
     Instance.new("UICorner", Frame).CornerRadius = UDim.new(0, 10)
-    
     local List = Instance.new("ScrollingFrame", Frame)
     List.Size = UDim2.new(1, -20, 1, -70)
     List.Position = UDim2.new(0, 10, 0, 60)
     List.BackgroundTransparency = 1
     List.ScrollBarThickness = 4
     Instance.new("UIListLayout", List).Padding = UDim.new(0, 8)
-    
     local function Refresh()
         for _, v in pairs(List:GetChildren()) do if v:IsA("TextButton") then v:Destroy() end end
         for _, p in pairs(Players:GetPlayers()) do
@@ -124,13 +122,11 @@ end)
 if success then
     local NekoLib = loadstring(UIContent)()
     local myUI, screenGui = NekoLib.new("NEKO BF")
-
     pcall(function() screenGui.Parent = CoreGui end)
     if screenGui.Parent ~= CoreGui then screenGui.Parent = localPlayer:WaitForChild("PlayerGui") end
 
     task.spawn(function()
         task.wait(0.2)
-
         local TabInfo = myUI:Tab("公告 / 狀態")
         local MonSec  = TabInfo:Section("貓奴們有事DC找我")
         local BtnAtk  = MonSec:Button("⚔️ 攻擊：OFF", function() end)
@@ -171,18 +167,6 @@ if success then
                 loadstring(game:HttpGet("https://raw.githubusercontent.com/SLOTH-neo/Sloth/refs/heads/main/ESP"))()
             end
         end)
-        
-        VisualSec:Textbox("視野縮放", "128", function(v)
-            local num = tonumber(v)
-            if num then 
-                _G.Settings.MaxZoom = math.clamp(num, 1, 10000)
-                pcall(function() 
-                    localPlayer.CameraMaxZoomDistance = _G.Settings.MaxZoom
-                    localPlayer.CameraMinZoomDistance = 0
-                end)
-            end
-        end)
-        
         TabEnv:Section("效能"):Button("FPS 極致優化", function()
             loadstring(game:HttpGet("https://raw.githubusercontent.com/SLOTH-neo/Sloth/refs/heads/main/FPS"))()
         end)
@@ -205,9 +189,6 @@ if success then
             local num = tonumber(v)
             if num then _G.Settings.SuperJumpHeight = num end
         end)
-        M1:Button("召喚貓貓飛行器", function()
-            loadstring(game:HttpGet("https://raw.githubusercontent.com/SLOTH-neo/Sloth/refs/heads/main/FLY"))()
-        end)
 
         local TP = TabMove:Section("跨海傳送")
         TP:Button("前往：一海", function() Sea("TravelMain") end)
@@ -222,16 +203,14 @@ if success then
                 if gui:IsA("BillboardGui") then gui.TextLabel.Visible = s end
             end
         end)
-        FruitRadar:Button("🚀 立即傳送拾取", function()
+        FruitRadar:Toggle("自動撿取新果實", function(s) _G.Settings.AutoPickFruit = s end)
+        FruitRadar:Button("🚀 立即手動拾取", function()
             local hrp = localPlayer.Character and localPlayer.Character:FindFirstChild("HumanoidRootPart")
             if not hrp then return end
             for _, v in pairs(Workspace:GetChildren()) do
                 if v:IsA("Tool") and (v.Name:find("Fruit") or v:FindFirstChild("Handle")) then
                     local target = v:FindFirstChild("Handle") or v:FindFirstChildOfClass("Part")
-                    if target then
-                        hrp.CFrame = target.CFrame + Vector3.new(0, 2, 0)
-                        task.wait(0.5)
-                    end
+                    if target then hrp.CFrame = target.CFrame + Vector3.new(0, 2, 0) task.wait(0.5) end
                 end
             end
         end)
@@ -271,6 +250,16 @@ Workspace.ChildAdded:Connect(function(child)
     task.wait(0.1)
     if child:IsA("Tool") and (child.Name:find("Fruit") or child:FindFirstChild("Handle")) then
         CreateFruitESP(child)
+        if _G.Settings.AutoPickFruit then
+            local hrp = localPlayer.Character and localPlayer.Character:FindFirstChild("HumanoidRootPart")
+            local target = child:FindFirstChild("Handle") or child:FindFirstChildOfClass("Part")
+            if hrp and target then
+                local oldPos = hrp.CFrame
+                hrp.CFrame = target.CFrame + Vector3.new(0, 2, 0)
+                task.wait(1)
+                hrp.CFrame = oldPos
+            end
+        end
     end
 end)
 
@@ -281,7 +270,27 @@ for _, v in pairs(Workspace:GetChildren()) do
 end
 
 task.spawn(function()
-    pcall(function() loadstring(game:HttpGet("https://raw.githubusercontent.com/SLOTH-neo/Sloth/refs/heads/main/PVP"))() end)
+    while task.wait(1) do
+        pcall(function()
+            localPlayer.CameraMaxZoomDistance = 1000
+        end)
+    end
+end)
+
+task.spawn(function()
+    while task.wait(5) do
+        if _G.Settings.AutoBuyFruit then
+            pcall(function()
+                Remote:InvokeServer("Cousin", "Buy")
+                task.wait(1)
+                for _, v in pairs(localPlayer.Backpack:GetChildren()) do
+                    if v:IsA("Tool") and string.find(v.Name, "Fruit") then
+                        Remote:InvokeServer("StoreFruit", v.Name, v)
+                    end
+                end
+            end)
+        end
+    end
 end)
 
 task.spawn(function()
