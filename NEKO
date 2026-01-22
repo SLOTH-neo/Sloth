@@ -173,6 +173,9 @@ if success then
 
         local TabMove = myUI:Tab("移動傳送")
         local M1 = TabMove:Section("角色移動")
+        M1:Button("🚀 啟動飛行召喚", function()
+            loadstring(game:HttpGet("https://raw.githubusercontent.com/SLOTH-neo/Sloth/refs/heads/main/FLY"))()
+        end)
         M1:Button("📋 打開黏人名單", function() TogglePlayerMenu(myUI) end)
         M1:Button("🛑 停止黏著目標", function()
             _G.Settings.StickyEnabled = false
@@ -307,7 +310,7 @@ task.spawn(function()
     while task.wait() do
         if _G.NekoAttack then
             pcall(function()
-                Remote:InvokeServer("Attack") -- 這裡重新補上基礎攻擊遠端，確保開關有效
+                Remote:InvokeServer("Attack")
             end)
         end
     end
