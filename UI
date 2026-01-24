@@ -1,8 +1,7 @@
 --[[UI]]--
-
+-- [[ Neko_PinkCyber_UI - AR HUD Edition ]]
 local library = {}
 
--- [[ 核心服務載入 ]]
 local services = setmetatable({}, {
     __index = function(_, k) 
         return game:GetService(k) 
@@ -11,7 +10,6 @@ local services = setmetatable({}, {
 
 local ts = services.TweenService
 
--- [[ 強化版動畫函數 ]]
 local function Tween(obj, info, prop)
     local t = ts:Create(obj, TweenInfo.new(unpack(info)), prop)
     t:Play()
@@ -20,15 +18,15 @@ end
 
 -- [[ 🌸 櫻花霓虹配色方案 ]]
 local C = {
-    Accent  = Color3.fromRGB(255, 105, 180), -- 霓虹粉 (核心高亮)
-    MainBG  = Color3.fromRGB(15, 10, 15),    -- 極深紫黑 (背景)
-    SideBG  = Color3.fromRGB(10, 5, 10),     -- 側邊欄 (深暗色)
-    BtnBG   = Color3.fromRGB(35, 25, 35),    -- 元件底色
-    Text    = Color3.fromRGB(220, 180, 200), -- 粉灰科技字
-    TextDim = Color3.fromRGB(110, 80, 95),   -- 暗部粉色
-    TextHi  = Color3.fromRGB(255, 255, 255), -- 高亮純白
-    Stroke  = Color3.fromRGB(255, 150, 200), -- 粉紅邊框 (發光感)
-    DotOff  = Color3.fromRGB(50, 40, 45),    -- 開關熄滅色
+    Accent  = Color3.fromRGB(255, 105, 180), 
+    MainBG  = Color3.fromRGB(15, 10, 15),    
+    SideBG  = Color3.fromRGB(10, 5, 10),     
+    BtnBG   = Color3.fromRGB(35, 25, 35),    -- 按鈕保有底色，營造懸浮晶片感
+    Text    = Color3.fromRGB(220, 180, 200), 
+    TextDim = Color3.fromRGB(110, 80, 95),   
+    TextHi  = Color3.fromRGB(255, 255, 255), 
+    Stroke  = Color3.fromRGB(255, 150, 200), 
+    DotOff  = Color3.fromRGB(50, 40, 45),    
 }
 
 function library.new(name)
@@ -37,26 +35,27 @@ function library.new(name)
     sg.ResetOnSpawn = false
     sg.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 
-    -- [[ 主視窗實體 ]]
+    -- [[ 主視窗實體 - 背景完全透明 ]]
     local Main = Instance.new("Frame", sg)
     Main.Size = UDim2.new(0, 460, 0, 310)
     Main.Position = UDim2.new(0.5, -230, 0.5, -155)
     Main.BackgroundColor3 = C.MainBG
-    Main.BackgroundTransparency = 0.08
+    Main.BackgroundTransparency = 1 -- ✨ 改為完全透明
     Main.BorderSizePixel = 0
     Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 14)
 
-    -- 粉色發光邊框
+    -- 粉色發光邊框 (在透明背景中定義範圍)
     local MainStroke = Instance.new("UIStroke", Main)
-    MainStroke.Thickness = 1
+    MainStroke.Thickness = 1.2
     MainStroke.Color = C.Stroke
-    MainStroke.Transparency = 0.8
+    MainStroke.Transparency = 0.6 -- 稍微柔和一點的發光
     MainStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
 
-    -- [[ 側邊導航欄 ]]
+    -- [[ 側邊導航欄 - 背景完全透明 ]]
     local Side = Instance.new("Frame", Main)
     Side.Size = UDim2.new(0, 135, 1, 0)
     Side.BackgroundColor3 = C.SideBG
+    Side.BackgroundTransparency = 1 -- ✨ 改為完全透明
     Side.BorderSizePixel = 0
     Instance.new("UICorner", Side).CornerRadius = UDim.new(0, 14)
 
@@ -94,7 +93,6 @@ function library.new(name)
         Main.Visible = not Main.Visible
     end
 
-    -- [[ 分頁建立函數 ]]
     function window:Tab(name)
         local Page = Instance.new("ScrollingFrame", Pages)
         Page.Size = UDim2.new(1, 0, 1, 0)
@@ -149,12 +147,11 @@ function library.new(name)
 
         local tab = {}
 
-        -- [[ 區塊元件 ]]
         function tab:Section(txt)
             local Sec = Instance.new("Frame", Page)
             Sec.Size = UDim2.new(0.98, 0, 0, 32)
             Sec.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-            Sec.BackgroundTransparency = 0.98
+            Sec.BackgroundTransparency = 0.98 -- ✨ 保留極淡底色，讓元件有漂浮感
             Instance.new("UICorner", Sec).CornerRadius = UDim.new(0, 10)
             
             local SecStroke = Instance.new("UIStroke", Sec)
@@ -186,7 +183,6 @@ function library.new(name)
 
             local e = {}
 
-            -- 按鈕元件
             function e:Button(t, cb)
                 local b = Instance.new("TextButton", Box)
                 b.Size = UDim2.new(0.94, 0, 0, 32)
@@ -207,7 +203,6 @@ function library.new(name)
                 return b 
             end
 
-            -- 開關元件
             function e:Toggle(t, cb)
                 local b = Instance.new("TextButton", Box)
                 b.Size = UDim2.new(0.94, 0, 0, 32)
@@ -241,7 +236,6 @@ function library.new(name)
                 return b
             end
 
-            -- 輸入框元件
             function e:Textbox(p, d, cb)
                 local b = Instance.new("TextBox", Box)
                 b.Size = UDim2.new(0.94, 0, 0, 32)
@@ -274,7 +268,6 @@ function library.new(name)
         return tab
     end
 
-    -- [[ 拖動邏輯 ]]
     function window:AddDrag(obj)
         local dragging, dragStart, startPos
         obj.InputBegan:Connect(function(input)
