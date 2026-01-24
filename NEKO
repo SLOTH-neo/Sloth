@@ -1,4 +1,7 @@
 -- [[主腳本]] --
+-- [[ NEKO CORE V3 - 終極全功能版 ]]
+-- 整合功能：雙重視野縮放、神刀快攻、自動打怪、移動強化、果實雷達
+
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local CoreGui = game:GetService("CoreGui")
@@ -11,14 +14,14 @@ local localPlayer = Players.LocalPlayer
 if getgenv().NEKO_RUNNING then return end
 getgenv().NEKO_RUNNING = true
 
--- 1. 核心配置表 (已加入 FOV)
+-- 1. 核心配置與初始值
 _G.Settings = {
     ClickDelay    = 0.1,
-    Distance      = 5000,
+    AtkRange      = 500,
     PullEnemies   = false,
     Mode          = "None",
-    FOV           = 80,   -- 預設視野角度
-    MaxZoom       = 128,  -- 預設鏡頭距離
+    FOV           = 80,   -- 視野角度
+    MaxZoom       = 128,  -- 鏡頭距離
     CatSpeedValue = 50,
     SpeedEnabled  = false,
     InfJump       = false,
@@ -26,9 +29,6 @@ _G.Settings = {
     SuperJumpHeight = 150,
     StickyEnabled = false,
     StickyTarget  = nil,
-    StickyOffset  = CFrame.new(3, 0, 7),
-    SnapDistance  = 500,
-    LerpSpeed     = 0.35,
     AutoBuyFruit  = false,
     FruitESP      = false
 }
@@ -39,44 +39,47 @@ _G.AutoV4      = false
 _G.NekoESP     = false
 
 local Remote = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("CommF_")
+local function Sea(cmd) pcall(function() Remote:InvokeServer(cmd) end) end
 
--- 2. 核心渲染循環 (視野縮放的核心喵！)
+-- 2. 核心渲染循環 (視覺同步與角色屬性)
 task.spawn(function()
     local Camera = workspace.CurrentCamera
     RunService.RenderStepped:Connect(function()
         if not _G.NekoRunning then return end
         pcall(function()
-            -- ✨ 來自他的視野縮放邏輯 (強行寫入)
+            -- ✨ 核心視野同步邏輯
             Camera.FieldOfView = _G.Settings.FOV
-            
-            -- ✨ 主人原本的距離縮放邏輯
             localPlayer.CameraMaxZoomDistance = _G.Settings.MaxZoom
             localPlayer.CameraMinZoomDistance = 0
             
-            -- 移動與跳躍同步
+            -- 角色屬性同步
             local char = localPlayer.Character
             if char and char:FindFirstChild("Humanoid") then
                 local hum = char.Humanoid
                 if _G.Settings.SpeedEnabled then
                     hum.WalkSpeed = _G.Settings.CatSpeedValue
                 end
+                if _G.AutoV4 then 
+                    Remote:InvokeServer("RaceV4Control", true) 
+                end
             end
         end)
     end)
 end)
 
--- 清理舊 UI
+-- 3. 清理舊 UI 與 準備
 local function NuclearClean()
-    local targets = {"NEKO BF", "NekoUI", "NekoTerminal_Lib", "NekoStickyMenu", "NekoMainBtn", "NekoFruitESP"}
+    local targets = {"NEKO BF", "NekoUI", "NekoStickyMenu", "NekoMainBtn", "NekoFruitESP"}
     for _, name in ipairs(targets) do
-        local obj = CoreGui:FindFirstChild(name) or localPlayer:FindFirstChild("PlayerGui"):FindFirstChild(name)
+        local obj = CoreGui:FindFirstChild(name) or localPlayer.PlayerGui:FindFirstChild(name)
         if obj then pcall(function() obj:Destroy() end) end
     end
 end
 NuclearClean()
-task.wait(0.3)
+local FruitFolder = CoreGui:FindFirstChild("NekoFruitESP") or Instance.new("Folder", CoreGui)
+FruitFolder.Name = "NekoFruitESP"
 
--- 3. 載入 UI 並設定功能
+-- 4. 載入 UI 庫並構建功能
 local success, UIContent = pcall(function()
     return game:HttpGet("https://raw.githubusercontent.com/SLOTH-neo/Sloth/refs/heads/main/UI")
 end)
@@ -84,35 +87,40 @@ end)
 if success then
     local NekoLib = loadstring(UIContent)()
     local myUI, screenGui = NekoLib.new("NEKO BF")
-
     pcall(function() screenGui.Parent = CoreGui end)
-    if screenGui.Parent ~= CoreGui then screenGui.Parent = localPlayer:WaitForChild("PlayerGui") end
+    if screenGui.Parent ~= CoreGui then screenGui.Parent = localPlayer.PlayerGui end
 
     task.spawn(function()
-        task.wait(0.2)
-        -- ... [省略部分不變的 Tab 設置] ...
+        -- [[ 分頁：戰鬥系統 ]]
+        local TabFight = myUI:Tab("戰鬥系統")
+        local F_Core = TabFight:Section("核心收割中心")
+        F_Core:Toggle("啟動神刀連擊 (FastAttack)", function(s) _G.NekoAttack = s end)
+        F_Core:Toggle("開啟貓抓拉怪 (Pull)", function(s) _G.Settings.PullEnemies = s end)
+        F_Core:Toggle("自動覺醒 V4", function(s) _G.AutoV4 = s end)
+        F_Core:Button("🧠 模式：自動打怪 (Mob)", function() _G.Settings.Mode = "Mob"; _G.NekoAttack = true end)
+        F_Core:Button("🔥 模式：全殺模式 (All)", function() _G.Settings.Mode = "All"; _G.NekoAttack = true end)
+        F_Core:Button("🛑 停止戰鬥", function() _G.Settings.Mode = "None"; _G.NekoAttack = false end)
 
+        -- [[ 分頁：環境優化 (包含 FOV 邏輯) ]]
         local TabEnv = myUI:Tab("環境優化")
         local VisualSec = TabEnv:Section("視覺增強")
-        
-        -- ✨ 更新後的視野控制組
         VisualSec:Textbox("視野角度 (FOV)", "80", function(v)
             local num = tonumber(v)
-            if num then 
-                _G.Settings.FOV = math.clamp(num, 30, 160) -- 限制範圍防止畫面炸裂喵
-            end
+            if num then _G.Settings.FOV = math.clamp(num, 30, 160) end
         end)
-        
         VisualSec:Textbox("鏡頭距離 (Zoom)", "128", function(v)
             local num = tonumber(v)
-            if num then 
-                _G.Settings.MaxZoom = math.clamp(num, 1, 10000)
+            if num then _G.Settings.MaxZoom = math.clamp(num, 1, 10000) end
+        end)
+        VisualSec:Toggle("開啟貓貓透視 (ESP)", function(s)
+            _G.NekoESP = s
+            if s and not _G.ESPLoaded then
+                _G.ESPLoaded = true
+                loadstring(game:HttpGet("https://raw.githubusercontent.com/SLOTH-neo/Sloth/refs/heads/main/ESP"))()
             end
         end)
-        
-        -- ... [其餘移動、果實、戰鬥分頁保持不變] ...
-        
-        -- 移動分頁範例 (加速與跳躍)
+
+        -- [[ 分頁：移動傳送 ]]
         local TabMove = myUI:Tab("移動傳送")
         local M1 = TabMove:Section("角色移動")
         M1:Toggle("開啟移動加速", function(s) _G.Settings.SpeedEnabled = s end)
@@ -120,19 +128,63 @@ if success then
             local num = tonumber(v)
             if num then _G.Settings.CatSpeedValue = num end
         end)
+        M1:Toggle("開啟無限跳躍", function(s) _G.Settings.InfJump = s end)
+        M1:Toggle("超級跳躍", function(s) _G.Settings.SuperJumpEnabled = s end)
+        M1:Button("召喚貓貓飛行器", function()
+            loadstring(game:HttpGet("https://raw.githubusercontent.com/SLOTH-neo/Sloth/refs/heads/main/FLY"))()
+        end)
+        
+        local TP = TabMove:Section("跨海傳送")
+        TP:Button("前往：一海", function() Sea("TravelMain") end)
+        TP:Button("前往：二海", function() Sea("TravelDressrosa") end)
+        TP:Button("前往：三海", function() Sea("TravelZou") end)
+
+        -- [[ 分頁：果實系統 ]]
+        local TabFruit = myUI:Tab("果實系統")
+        TabFruit:Section("雷達"):Toggle("開啟果實透視", function(s) _G.Settings.FruitESP = s end)
+        TabFruit:Section("自動"):Toggle("自動抽果實", function(s) _G.Settings.AutoBuyFruit = s end)
     end)
 end
 
--- 無限跳躍與超級跳 (維持原本邏輯)
+-- 5. 戰鬥邏輯核心 (快攻與目標搜索)
+task.spawn(function()
+    local RA = ReplicatedStorage.Modules.Net:WaitForChild("RE/RegisterAttack")
+    local RH = ReplicatedStorage.Modules.Net:WaitForChild("RE/RegisterHit")
+    while task.wait() do
+        if _G.NekoAttack then
+            pcall(function()
+                local targets = {}
+                local function find(folder)
+                    for _, e in pairs(folder:GetChildren()) do
+                        if e:FindFirstChild("Humanoid") and e.Humanoid.Health > 0 then
+                            local part = e:FindFirstChild("HumanoidRootPart") or e.PrimaryPart
+                            if part and localPlayer:DistanceFromCharacter(part.Position) < _G.Settings.AtkRange then
+                                table.insert(targets, {e, part})
+                            end
+                        end
+                    end
+                end
+                
+                if _G.Settings.Mode == "All" then find(workspace.Enemies); find(workspace.Characters)
+                elseif _G.Settings.Mode == "Mob" then find(workspace.Enemies) end
+                
+                if #targets > 0 then
+                    RA:FireServer(_G.Settings.ClickDelay)
+                    RH:FireServer(targets[1][2], targets)
+                end
+            end)
+        end
+        task.wait(_G.Settings.ClickDelay)
+    end
+end)
+
+-- 無限跳躍監聽
 UserInputService.JumpRequest:Connect(function()
     local hum = localPlayer.Character and localPlayer.Character:FindFirstChildOfClass("Humanoid")
-    if not hum then return end
-    if _G.Settings.SuperJumpEnabled then
-        hum.JumpPower = _G.Settings.SuperJumpHeight
-        hum:ChangeState(Enum.HumanoidStateType.Jumping)
-    elseif _G.Settings.InfJump then
+    if hum and (_G.Settings.InfJump or _G.Settings.SuperJumpEnabled) then
+        if _G.Settings.SuperJumpEnabled then hum.JumpPower = _G.Settings.SuperJumpHeight end
         hum:ChangeState(Enum.HumanoidStateType.Jumping)
     end
 end)
 
-print("NEKO CORE V2 (FOV + ZOOM) LOADED.")
+print("NEKO PROJECT V3 終極載入完成喵！🐾")
