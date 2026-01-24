@@ -11,6 +11,9 @@ local Whitelist = {
     ["jay04_23"] = true, 
     ["robloxasdft114"] = true,
     ["YuXin_107"] = true,
+    ["XanYU0322"] = true,
+    ["bruce_dog555"] = true,
+    ["YangXiong1023"] = true,
     ["yoyowww99100"] = true
 }
 
