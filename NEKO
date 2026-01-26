@@ -16,10 +16,10 @@ getgenv().NEKO_RUNNING = true
 -- 1. 核心配置表
 _G.Settings = {
     ClickDelay    = 0.1,
-    AtkRange      = 500,
+    AtkRange      = 2500,
     PullEnemies   = false,
     Mode          = "None",
-    FOV           = 80,
+    FOV           = 120,
     MaxZoom       = 128,
     CatSpeedValue = 50,
     SpeedEnabled  = false,
