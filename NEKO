@@ -1,5 +1,5 @@
--- [[ NEKO PROJECT V3 - 修正完整版 (自動V4 已修) ]]
--- 包含：所有分頁功能、視野(FOV)同步、神刀連擊、跨海傳送、果實偵測
+-- [[ NEKO PROJECT V3 - 最終修復完整版 ]]
+-- 功能：FOV同步、神刀連擊、跨海傳送、果實偵測、自動V4已修、UI元件全顯示（收合Section相容）
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -54,12 +54,10 @@ task.spawn(function()
             if char and char:FindFirstChild("Humanoid") then
                 local hum = char.Humanoid
                 if _G.Settings.SpeedEnabled then hum.WalkSpeed = _G.Settings.CatSpeedValue end
-                -- 修復自動V4：改用有效remote + 額外檢查
                 if _G.AutoV4 then
                     pcall(function()
                         Remote:InvokeServer("SetRaceV4", true)
                         Remote:InvokeServer("RaceV4", true)
-                        -- 如果有覺醒能量條滿，嘗試激活（部分executor支援虛擬按鍵）
                         if hum:GetAttribute("Awakening") or hum:GetAttribute("V4Awakening") then
                             Remote:InvokeServer("Awakening", true)
                         end
@@ -70,7 +68,7 @@ task.spawn(function()
     end)
 end)
 
--- 新增：V4專用背景循環（避免RenderStepped太重）
+-- V4 背景循環
 task.spawn(function()
     while task.wait(1) do
         if _G.AutoV4 then
@@ -82,7 +80,7 @@ task.spawn(function()
     end
 end)
 
--- 3. 清理舊 UI 與 準備
+-- 3. 清理舊 UI
 local function NuclearClean()
     local targets = {"NEKO BF", "NekoUI", "NekoStickyMenu", "NekoMainBtn", "NekoFruitESP"}
     for _, name in ipairs(targets) do
@@ -94,7 +92,7 @@ NuclearClean()
 local FruitFolder = CoreGui:FindFirstChild("NekoFruitESP") or Instance.new("Folder", CoreGui)
 FruitFolder.Name = "NekoFruitESP"
 
--- 4. 載入 UI 並構建所有功能
+-- 4. 載入 UI 並構建
 local success, UIContent = pcall(function()
     return game:HttpGet("https://raw.githubusercontent.com/SLOTH-neo/Sloth/refs/heads/main/UI")
 end)
@@ -106,11 +104,11 @@ if success then
     if screenGui.Parent ~= CoreGui then screenGui.Parent = localPlayer.PlayerGui end
 
     task.spawn(function()
-        task.wait(0.2)
+        task.wait(0.3)  -- 多等一點點，確保 library 穩定
         
-        -- [[ 1. 公告分頁 ]]
+        -- 1. 公告 / 狀態
         local TabInfo = myUI:Tab("公告 / 狀態")
-        local MonSec  = TabInfo:Section("貓奴控制台")
+        local MonSec  = TabInfo:Section("貓奴控制台", true)
         local BtnAtk  = MonSec:Button("⚔️ 攻擊：OFF", function() end)
         local BtnMode = MonSec:Button("🧠 模式：None", function() end)
         task.spawn(function()
@@ -123,9 +121,9 @@ if success then
             end
         end)
 
-        -- [[ 2. 戰鬥分頁 ]]
+        -- 2. 戰鬥系統
         local TabFight = myUI:Tab("戰鬥系統")
-        local F_Core = TabFight:Section("核心收割中心")
+        local F_Core = TabFight:Section("核心收割中心", true)
         F_Core:Toggle("啟動神刀連擊 (FastAttack)", function(s) _G.NekoAttack = s end)
         F_Core:Toggle("開啟貓抓拉怪 (Pull)", function(s) _G.Settings.PullEnemies = s end)
         F_Core:Toggle("自動覺醒 V4 (已修)", function(s) 
@@ -142,9 +140,9 @@ if success then
         F_Core:Button("🔥 模式：全殺模式 (All)", function() _G.Settings.Mode = "All"; _G.NekoAttack = true end)
         F_Core:Button("🛑 停止戰鬥", function() _G.Settings.Mode = "None"; _G.NekoAttack = false end)
 
-        -- [[ 3. 環境分頁 ]]
+        -- 3. 環境優化
         local TabEnv = myUI:Tab("環境優化")
-        local VisualSec = TabEnv:Section("視覺增強")
+        local VisualSec = TabEnv:Section("視覺增強", true)
         VisualSec:Textbox("視野角度 (FOV)", "80", function(v)
             local num = tonumber(v)
             if num then _G.Settings.FOV = math.clamp(num, 30, 160) end
@@ -160,13 +158,14 @@ if success then
                 loadstring(game:HttpGet("https://raw.githubusercontent.com/SLOTH-neo/Sloth/refs/heads/main/ESP"))()
             end
         end)
-        TabEnv:Section("效能"):Button("FPS 極致優化", function()
+        local EffSec = TabEnv:Section("效能", true)
+        EffSec:Button("FPS 極致優化", function()
             loadstring(game:HttpGet("https://raw.githubusercontent.com/SLOTH-neo/Sloth/refs/heads/main/FPS"))()
         end)
 
-        -- [[ 4. 移動分頁 ]]
+        -- 4. 移動傳送
         local TabMove = myUI:Tab("移動傳送")
-        local M1 = TabMove:Section("角色移動")
+        local M1 = TabMove:Section("角色移動", true)
         M1:Toggle("開啟移動加速", function(s) _G.Settings.SpeedEnabled = s end)
         M1:Textbox("加速數值", "50", function(v)
             local num = tonumber(v)
@@ -182,14 +181,14 @@ if success then
             loadstring(game:HttpGet("https://raw.githubusercontent.com/SLOTH-neo/Sloth/refs/heads/main/FLY"))()
         end)
         
-        local TP = TabMove:Section("跨海傳送")
+        local TP = TabMove:Section("跨海傳送", true)
         TP:Button("前往：一海", function() Sea("TravelMain") end)
         TP:Button("前往：二海", function() Sea("TravelDressrosa") end)
         TP:Button("前往：三海", function() Sea("TravelZou") end)
 
-        -- [[ 5. 果實分頁 ]]
+        -- 5. 果實系統
         local TabFruit = myUI:Tab("果實系統")
-        local FruitRadar = TabFruit:Section("地圖果實偵測")
+        local FruitRadar = TabFruit:Section("地圖果實偵測", true)
         FruitRadar:Toggle("開啟果實透視", function(s) _G.Settings.FruitESP = s end)
         FruitRadar:Button("🚀 立即傳送拾取", function()
             local hrp = localPlayer.Character and localPlayer.Character:FindFirstChild("HumanoidRootPart")
@@ -200,7 +199,7 @@ if success then
                 end
             end
         end)
-        local FruitSec = TabFruit:Section("自動與抽獎")
+        local FruitSec = TabFruit:Section("自動與抽獎", true)
         FruitSec:Toggle("自動抽果實", function(s) _G.Settings.AutoBuyFruit = s end)
         FruitSec:Button("🎰 手動抽獎", function() Remote:InvokeServer("Cousin", "Buy") end)
 
@@ -209,18 +208,33 @@ if success then
         MiniBtn.Name = "NekoMainBtn"
         MiniBtn.Size = UDim2.new(0, 65, 0, 65)
         MiniBtn.Position = UDim2.new(0, 20, 0.5, -32)
-        MiniBtn.Text = "🐾"; MiniBtn.TextSize = 30
+        MiniBtn.Text = "🐾"
+        MiniBtn.TextSize = 30
         MiniBtn.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
         MiniBtn.TextColor3 = Color3.fromRGB(255, 120, 180)
         Instance.new("UICorner", MiniBtn).CornerRadius = UDim.new(1, 0)
         local Stroke = Instance.new("UIStroke", MiniBtn)
-        Stroke.Color = Color3.fromRGB(255, 120, 180); Stroke.Thickness = 2
+        Stroke.Color = Color3.fromRGB(255, 120, 180)
+        Stroke.Thickness = 2
         myUI:AddDrag(MiniBtn)
         MiniBtn.MouseButton1Click:Connect(function() myUI:Toggle() end)
+
+        -- 強制刷新所有頁面高度（解決收合版UI不顯示按鈕的關鍵）
+        task.wait(0.2)
+        for _, page in pairs(myUI.Pages:GetChildren()) do  -- 注意：這裡用 myUI.Pages，如果你library有暴露Pages變數
+            if page:IsA("ScrollingFrame") then
+                local layout = page:FindFirstChild("UIListLayout") or page:FindFirstChildOfClass("UIListLayout")
+                if layout then
+                    page.CanvasSize = UDim2.new(0, 0, 0, layout.AbsoluteContentSize.Y + 10)
+                end
+            end
+        end
+
+        print("UI 建構完成，所有功能已載入！🐾")
     end)
 end
 
--- 5. 戰鬥邏輯核心 (不變)
+-- 5. 戰鬥邏輯核心
 task.spawn(function()
     local RA = ReplicatedStorage.Modules.Net:WaitForChild("RE/RegisterAttack")
     local RH = ReplicatedStorage.Modules.Net:WaitForChild("RE/RegisterHit")
@@ -238,9 +252,16 @@ task.spawn(function()
                         end
                     end
                 end
-                if _G.Settings.Mode == "All" then find(workspace.Enemies); find(workspace.Characters)
-                elseif _G.Settings.Mode == "Mob" then find(workspace.Enemies) end
-                if #ts > 0 then RA:FireServer(_G.Settings.ClickDelay); RH:FireServer(ts[1][2], ts) end
+                if _G.Settings.Mode == "All" then 
+                    find(workspace.Enemies)
+                    find(workspace.Characters)
+                elseif _G.Settings.Mode == "Mob" then 
+                    find(workspace.Enemies) 
+                end
+                if #ts > 0 then 
+                    RA:FireServer(_G.Settings.ClickDelay)
+                    RH:FireServer(ts[1][2], ts) 
+                end
             end)
         end
         task.wait(_G.Settings.ClickDelay)
@@ -255,4 +276,4 @@ UserInputService.JumpRequest:Connect(function()
     end
 end)
 
-print("NEKO PROJECT V3 終極載入完成喵！🐾 (自動V4 已修)")
+print("NEKO PROJECT V3 終極載入完成喵！🐾 (UI元件全顯示 + 收合相容)")
