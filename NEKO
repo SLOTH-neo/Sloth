@@ -1,4 +1,4 @@
--- [[ NEKO PROJECT V3 - 完整正確版 (HttpGet 連結已補回) ]]
+-- [[ NEKO PROJECT V3 - 自動偵測海域 + 動態傳送按鈕 ]]
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -38,7 +38,47 @@ _G.NekoESP     = false
 local Remote = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("CommF_")
 local function Sea(cmd) pcall(function() Remote:InvokeServer(cmd) end) end
 
--- 渲染循環 + V4
+-- 偵測目前海域
+local function GetCurrentSea()
+    local placeId = game.PlaceId
+    if placeId == 2753915549 then return 1 end  -- 一海
+    if placeId == 4442272183 then return 2 end  -- 二海
+    if placeId == 7449423635 then return 3 end  -- 三海
+    return 0  -- 未知
+end
+
+-- 根據海域返回可傳送地點
+local function GetSeaTeleports(sea)
+    if sea == 1 then
+        return {
+            {name = "港口", cmd = "TeleportToPort"},
+            {name = "可可西亞村", cmd = "TeleportToCocoa"},
+            {name = "橘子鎮", cmd = "TeleportToOrange"},
+        }
+    elseif sea == 2 then
+        return {
+            {name = "咖啡廳", cmd = "TeleportToCafe"},
+            {name = "冰凍島", cmd = "TeleportToIce"},
+            {name = "水之都", cmd = "TeleportToWater"},
+        }
+    elseif sea == 3 then
+        return {
+            {name = "天空島", cmd = "TeleportToSky"},
+            {name = "魚人島", cmd = "TeleportToFishman"},
+            {name = "萬國", cmd = "TeleportToWholeCake"},
+            {name = "和之國", cmd = "TeleportToWano"},
+            {name = "雪山", cmd = "TeleportToSnow"},
+            {name = "沙漠", cmd = "TeleportToDesert"},
+            {name = "火山", cmd = "TeleportToVolcano"},
+            {name = "墓地", cmd = "TeleportToGraveyard"},
+            {name = "神秘島", cmd = "TeleportToMystery"},
+        }
+    else
+        return {}
+    end
+end
+
+-- 渲染循環 + V4 (原樣)
 task.spawn(function()
     local Camera = workspace.CurrentCamera
     RunService.RenderStepped:Connect(function()
@@ -95,7 +135,6 @@ local success, UIContent = pcall(function()
 end)
 
 if success then
-    print("成功載入 library！長度：" .. #UIContent .. " 字元")
     local NekoLib = loadstring(UIContent)()
     local myUI, screenGui = NekoLib.new("NEKO BF")
     pcall(function() screenGui.Parent = CoreGui end)
@@ -104,7 +143,7 @@ if success then
     task.spawn(function()
         task.wait(0.6)
         
-        -- 公告 / 狀態
+        -- 公告 / 狀態 (原樣)
         local TabInfo = myUI:Tab("公告 / 狀態")
         local MonSec  = TabInfo:Section("貓奴控制台")
         local BtnAtk  = MonSec:Button("⚔️ 攻擊：OFF", function() end)
@@ -119,7 +158,7 @@ if success then
             end
         end)
 
-        -- 戰鬥系統
+        -- 戰鬥系統 (原樣)
         local TabFight = myUI:Tab("戰鬥系統")
         local F_Core = TabFight:Section("核心收割中心")
         F_Core:Toggle("啟動神刀連擊 (FastAttack)", function(s) _G.NekoAttack = s end)
@@ -138,7 +177,7 @@ if success then
         F_Core:Button("🔥 模式：全殺模式 (All)", function() _G.Settings.Mode = "All"; _G.NekoAttack = true end)
         F_Core:Button("🛑 停止戰鬥", function() _G.Settings.Mode = "None"; _G.NekoAttack = false end)
 
-        -- 環境優化
+        -- 環境優化 (原樣)
         local TabEnv = myUI:Tab("環境優化")
         local VisualSec = TabEnv:Section("視覺增強")
         VisualSec:Textbox("視野角度 (FOV)", "80", function(v)
@@ -161,8 +200,8 @@ if success then
             loadstring(game:HttpGet("https://raw.githubusercontent.com/SLOTH-neo/Sloth/refs/heads/main/FPS"))()
         end)
 
-        -- 移動傳送
-        local TabMove = myUI:Tab("移動傳送")
+        -- 移動 Tab (原樣)
+        local TabMove = myUI:Tab("移動")
         local M1 = TabMove:Section("角色移動")
         M1:Toggle("開啟移動加速", function(s) _G.Settings.SpeedEnabled = s end)
         M1:Textbox("加速數值", "50", function(v)
@@ -178,13 +217,49 @@ if success then
         M1:Button("召喚貓貓飛行器", function()
             loadstring(game:HttpGet("https://raw.githubusercontent.com/SLOTH-neo/Sloth/refs/heads/main/FLY"))()
         end)
-        
-        local TP = TabMove:Section("跨海傳送")
-        TP:Button("前往：一海", function() Sea("TravelMain") end)
-        TP:Button("前往：二海", function() Sea("TravelDressrosa") end)
-        TP:Button("前往：三海", function() Sea("TravelZou") end)
 
-        -- 果實系統
+        -- 傳送 Tab (動態偵測海域 + 顯示當前海域可去地點)
+        local TabTP = myUI:Tab("傳送")
+        local TPSection = TabTP:Section("跨海傳送")
+        local StatusLabel = TPSection:Textbox("目前海域", "偵測中...", function() end)  -- 顯示狀態
+
+        -- 基本跨海
+        TPSection:Button("前往：一海", function() Sea("TravelMain") end)
+        TPSection:Button("前往：二海", function() Sea("TravelDressrosa") end)
+        TPSection:Button("前往：三海", function() Sea("TravelZou") end)
+
+        -- 偵測海域並更新可傳送按鈕
+        local function UpdateSeaTeleports()
+            local sea = GetCurrentSea()
+            local seaName = sea == 1 and "一海" or sea == 2 and "二海" or sea == 3 and "三海" or "未知"
+            StatusLabel.Text = "目前海域：" .. seaName
+
+            -- 動態清除舊按鈕（避免重複）
+            for _, child in pairs(TPSection.Box:GetChildren()) do
+                if child:IsA("TextButton") and child.Text:find("前往") then
+                    child:Destroy()
+                end
+            end
+
+            -- 根據海域加按鈕
+            local teleports = GetSeaTeleports(sea)
+            for _, tp in ipairs(teleports) do
+                TPSection:Button("前往：" .. tp.name, function() Sea(tp.cmd) end)
+            end
+        end
+
+        -- 初始偵測
+        UpdateSeaTeleports()
+
+        -- 每 10 秒偵測一次（防換海沒更新）
+        task.spawn(function()
+            while true do
+                task.wait(10)
+                UpdateSeaTeleports()
+            end
+        end)
+
+        -- 果實系統 (原樣)
         local TabFruit = myUI:Tab("果實系統")
         local FruitRadar = TabFruit:Section("地圖果實偵測")
         FruitRadar:Toggle("開啟果實透視", function(s) _G.Settings.FruitESP = s end)
@@ -201,7 +276,7 @@ if success then
         FruitSec:Toggle("自動抽果實", function(s) _G.Settings.AutoBuyFruit = s end)
         FruitSec:Button("🎰 手動抽獎", function() Remote:InvokeServer("Cousin", "Buy") end)
 
-        -- 懸浮按鈕
+        -- 懸浮按鈕 (原樣)
         local MiniBtn = Instance.new("TextButton", screenGui)
         MiniBtn.Name = "NekoMainBtn"
         MiniBtn.Size = UDim2.new(0, 65, 0, 65)
@@ -217,7 +292,7 @@ if success then
         myUI:AddDrag(MiniBtn)
         MiniBtn.MouseButton1Click:Connect(function() myUI:Toggle() end)
 
-        -- 強制刷新頁面
+        -- 強制刷新 (原樣)
         task.delay(1.0, function()
             for _, page in pairs(myUI.Pages:GetChildren()) do
                 if page:IsA("ScrollingFrame") then
@@ -234,7 +309,7 @@ else
     print("載入 library 失敗！請檢查連結或網路")
 end
 
--- 戰鬥邏輯
+-- 戰鬥邏輯 (原樣)
 task.spawn(function()
     local RA = ReplicatedStorage.Modules.Net:WaitForChild("RE/RegisterAttack")
     local RH = ReplicatedStorage.Modules.Net:WaitForChild("RE/RegisterHit")
@@ -269,4 +344,4 @@ UserInputService.JumpRequest:Connect(function()
     end
 end)
 
-print("NEKO PROJECT V3 載入完成！如果 UI 框架出現但內容空白，請檢查 console 是否有 '成功載入 library'")
+print("NEKO PROJECT V3 載入完成！新增自動偵測海域 + 動態傳送按鈕")
