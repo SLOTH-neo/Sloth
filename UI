@@ -1,5 +1,5 @@
 --[[UI]]--
--- [[ Neko_PinkCyber_UI - 簡化穩定版 (風格接近 WindUI) ]]
+-- [[ Neko_PinkCyber_UI - 簡化穩定版 (內容頁面擺正版) ]]
 
 local library = {}
 
@@ -23,8 +23,8 @@ local C = {
     TextHi     = Color3.fromRGB(255, 255, 255),
     Stroke     = Color3.fromRGB(255, 150, 200),
     DotOff     = Color3.fromRGB(50, 40, 45),
-    HoverGlow  = Color3.fromRGB(255, 180, 220),  -- 新增 hover 發光
-    Glass      = Color3.fromRGB(255, 255, 255),  -- 玻璃感
+    HoverGlow  = Color3.fromRGB(255, 180, 220),
+    Glass      = Color3.fromRGB(255, 255, 255),
 }
 
 function library.new(name)
@@ -34,10 +34,10 @@ function library.new(name)
     sg.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 
     local Main = Instance.new("Frame", sg)
-    Main.Size = UDim2.new(0, 480, 0, 340)  -- 稍微大一點
+    Main.Size = UDim2.new(0, 480, 0, 340)
     Main.Position = UDim2.new(0.5, -240, 0.5, -170)
     Main.BackgroundColor3 = C.MainBG
-    Main.BackgroundTransparency = 0.35  -- 半透明玻璃感
+    Main.BackgroundTransparency = 0.35
     Main.BorderSizePixel = 0
     Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 16)
 
@@ -77,8 +77,8 @@ function library.new(name)
     end)
 
     local Pages = Instance.new("Frame", Main)
-    Pages.Size = UDim2.new(1, -160, 1, -20)
-    Pages.Position = UDim2.new(0, 140, 0, 10)
+    Pages.Size = UDim2.new(1, -170, 1, -20)  -- 寬度扣 170（原 160 → 增加右邊留白）
+    Pages.Position = UDim2.new(0, 150, 0, 10)  -- 左邊距改 150（原 140 → 內容不再靠左）
     Pages.BackgroundTransparency = 1
 
     local window = {current = nil}
