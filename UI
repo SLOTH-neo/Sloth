@@ -1,6 +1,6 @@
 --[[UI]]--
+-- [[ Neko_PinkCyber_UI - AR HUD Edition with Collapsible Sections (修好版) ]]
 
--- [[ Neko_PinkCyber_UI - AR HUD Edition with Collapsible Sections ]]
 local library = {}
 
 local services = setmetatable({}, {
@@ -17,7 +17,6 @@ local function Tween(obj, info, prop)
     return t
 end
 
--- [[ 🌸 櫻花霓虹配色方案 ]]
 local C = {
     Accent  = Color3.fromRGB(255, 105, 180), 
     MainBG  = Color3.fromRGB(15, 10, 15),    
@@ -36,7 +35,6 @@ function library.new(name)
     sg.ResetOnSpawn = false
     sg.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 
-    -- 主視窗 (透明 AR HUD)
     local Main = Instance.new("Frame", sg)
     Main.Size = UDim2.new(0, 460, 0, 310)
     Main.Position = UDim2.new(0.5, -230, 0.5, -155)
@@ -51,7 +49,6 @@ function library.new(name)
     MainStroke.Transparency = 0.6
     MainStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
 
-    -- 側邊導航
     local Side = Instance.new("Frame", Main)
     Side.Size = UDim2.new(0, 135, 1, 0)
     Side.BackgroundColor3 = C.SideBG
@@ -86,7 +83,7 @@ function library.new(name)
     Pages.Position = UDim2.new(0, 140, 0, 10)
     Pages.BackgroundTransparency = 1
 
-    local window = {current = nil}
+    local window = {current = nil, Pages = Pages}
 
     function window:Toggle()
         Main.Visible = not Main.Visible
@@ -94,6 +91,7 @@ function library.new(name)
 
     function window:Tab(name)
         local Page = Instance.new("ScrollingFrame", Pages)
+        Page.Name = "Page_" .. name
         Page.Size = UDim2.new(1, 0, 1, 0)
         Page.ScrollBarThickness = 0
         Page.BackgroundTransparency = 1
@@ -145,7 +143,7 @@ function library.new(name)
             window.current = {Page = Page, Btn = Btn, Indicator = Indicator}
         end
 
-        local tab = {}
+        local tab = {Page = Page}
 
         function tab:Section(txt, opened)
             local Sec = Instance.new("Frame", Page)
@@ -159,7 +157,6 @@ function library.new(name)
             SecStroke.Transparency = 0.94
             SecStroke.Thickness = 1
 
-            -- 標題行 (可點擊收合)
             local Header = Instance.new("TextButton", Sec)
             Header.Size = UDim2.new(1, 0, 0, 32)
             Header.BackgroundTransparency = 1
@@ -189,44 +186,40 @@ function library.new(name)
             Box.Size = UDim2.new(1, 0, 0, 0)
             Box.Position = UDim2.new(0, 0, 0, 32)
             Box.BackgroundTransparency = 1
-            Box.ClipsDescendants = true  -- 收合時隱藏內容
+            Box.ClipsDescendants = true
             
             local bl = Instance.new("UIListLayout", Box)
             bl.Padding = UDim.new(0, 6)
             bl.HorizontalAlignment = Enum.HorizontalAlignment.Center
             bl:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-                if Box.Visible then
-                    Sec.Size = UDim2.new(0.98, 0, 0, bl.AbsoluteContentSize.Y + 38)
-                end
+                Sec.Size = UDim2.new(0.98, 0, 0, bl.AbsoluteContentSize.Y + 38)
             end)
 
-            -- 收合邏輯
-            local isOpen = opened ~= false  -- 預設開啟，除非指定false
+            local isOpen = opened ~= false
             Box.Visible = isOpen
             Arrow.Text = isOpen and "▼" or "▶"
-            if isOpen then
-                Sec.Size = UDim2.new(0.98, 0, 0, 0)  -- 先設0，之後自動調整
-            end
 
             Header.MouseButton1Click:Connect(function()
                 isOpen = not isOpen
                 Arrow.Text = isOpen and "▼" or "▶"
                 
                 if isOpen then
-                    -- 展開動畫
                     Tween(Sec, {0.3, Enum.EasingStyle.Back}, {Size = UDim2.new(0.98, 0, 0, bl.AbsoluteContentSize.Y + 38)})
                     Box.Visible = true
-                    Tween(Arrow, {0.2}, {Rotation = 0})
                 else
-                    -- 收合動畫
                     Tween(Sec, {0.3, Enum.EasingStyle.Back}, {Size = UDim2.new(0.98, 0, 0, 32)})
                     task.delay(0.3, function() Box.Visible = false end)
-                    Tween(Arrow, {0.2}, {Rotation = -90})  -- 箭頭轉向更明顯
                 end
                 
-                -- 輕微發光效果
                 Tween(SecStroke, {0.2}, {Transparency = isOpen and 0.7 or 0.94})
             end)
+
+            if isOpen then
+                task.delay(0.2, function()
+                    Sec.Size = UDim2.new(0.98, 0, 0, bl.AbsoluteContentSize.Y + 38)
+                    Box.Visible = true
+                end)
+            end
 
             local e = {}
 
@@ -250,9 +243,7 @@ function library.new(name)
                 return b 
             end
 
-            -- Toggle 和 Textbox 保持原樣，塞進 Box
             function e:Toggle(t, cb)
-                -- ... (原 Toggle 代碼不變，直接貼上)
                 local b = Instance.new("TextButton", Box)
                 b.Size = UDim2.new(0.94, 0, 0, 32)
                 b.BackgroundColor3 = C.BtnBG
@@ -286,7 +277,6 @@ function library.new(name)
             end
 
             function e:Textbox(p, d, cb)
-                -- ... (原 Textbox 代碼不變)
                 local b = Instance.new("TextBox", Box)
                 b.Size = UDim2.new(0.94, 0, 0, 32)
                 b.BackgroundColor3 = Color3.fromRGB(20, 15, 20)
@@ -319,7 +309,6 @@ function library.new(name)
     end
 
     function window:AddDrag(obj)
-        -- 原拖拽不變
         local dragging, dragStart, startPos
         obj.InputBegan:Connect(function(input)
             if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
