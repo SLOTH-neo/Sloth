@@ -1,5 +1,6 @@
 --[[UI]]--
--- [[ Neko_PinkCyber_UI - AR HUD Edition ]]
+
+-- [[ Neko_PinkCyber_UI - AR HUD Edition with Collapsible Sections ]]
 local library = {}
 
 local services = setmetatable({}, {
@@ -21,7 +22,7 @@ local C = {
     Accent  = Color3.fromRGB(255, 105, 180), 
     MainBG  = Color3.fromRGB(15, 10, 15),    
     SideBG  = Color3.fromRGB(10, 5, 10),     
-    BtnBG   = Color3.fromRGB(35, 25, 35),    -- 按鈕保有底色，營造懸浮晶片感
+    BtnBG   = Color3.fromRGB(35, 25, 35),    
     Text    = Color3.fromRGB(220, 180, 200), 
     TextDim = Color3.fromRGB(110, 80, 95),   
     TextHi  = Color3.fromRGB(255, 255, 255), 
@@ -35,27 +36,26 @@ function library.new(name)
     sg.ResetOnSpawn = false
     sg.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 
-    -- [[ 主視窗實體 - 背景完全透明 ]]
+    -- 主視窗 (透明 AR HUD)
     local Main = Instance.new("Frame", sg)
     Main.Size = UDim2.new(0, 460, 0, 310)
     Main.Position = UDim2.new(0.5, -230, 0.5, -155)
     Main.BackgroundColor3 = C.MainBG
-    Main.BackgroundTransparency = 1 -- ✨ 改為完全透明
+    Main.BackgroundTransparency = 1
     Main.BorderSizePixel = 0
     Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 14)
 
-    -- 粉色發光邊框 (在透明背景中定義範圍)
     local MainStroke = Instance.new("UIStroke", Main)
     MainStroke.Thickness = 1.2
     MainStroke.Color = C.Stroke
-    MainStroke.Transparency = 0.6 -- 稍微柔和一點的發光
+    MainStroke.Transparency = 0.6
     MainStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
 
-    -- [[ 側邊導航欄 - 背景完全透明 ]]
+    -- 側邊導航
     local Side = Instance.new("Frame", Main)
     Side.Size = UDim2.new(0, 135, 1, 0)
     Side.BackgroundColor3 = C.SideBG
-    Side.BackgroundTransparency = 1 -- ✨ 改為完全透明
+    Side.BackgroundTransparency = 1
     Side.BorderSizePixel = 0
     Instance.new("UICorner", Side).CornerRadius = UDim.new(0, 14)
 
@@ -81,7 +81,6 @@ function library.new(name)
         TabContainer.CanvasSize = UDim2.new(0, 0, 0, tl.AbsoluteContentSize.Y)
     end)
 
-    -- [[ 內容頁面容器 ]]
     local Pages = Instance.new("Frame", Main)
     Pages.Size = UDim2.new(1, -150, 1, -20)
     Pages.Position = UDim2.new(0, 140, 0, 10)
@@ -102,6 +101,7 @@ function library.new(name)
         
         local pl = Instance.new("UIListLayout", Page)
         pl.Padding = UDim.new(0, 10)
+        pl.SortOrder = Enum.SortOrder.LayoutOrder
         pl:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
             Page.CanvasSize = UDim2.new(0, 0, 0, pl.AbsoluteContentSize.Y + 10)
         end)
@@ -147,11 +147,11 @@ function library.new(name)
 
         local tab = {}
 
-        function tab:Section(txt)
+        function tab:Section(txt, opened)
             local Sec = Instance.new("Frame", Page)
             Sec.Size = UDim2.new(0.98, 0, 0, 32)
             Sec.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-            Sec.BackgroundTransparency = 0.98 -- ✨ 保留極淡底色，讓元件有漂浮感
+            Sec.BackgroundTransparency = 0.98
             Instance.new("UICorner", Sec).CornerRadius = UDim.new(0, 10)
             
             local SecStroke = Instance.new("UIStroke", Sec)
@@ -159,9 +159,25 @@ function library.new(name)
             SecStroke.Transparency = 0.94
             SecStroke.Thickness = 1
 
-            local T = Instance.new("TextLabel", Sec)
-            T.Size = UDim2.new(1, -10, 0, 25)
-            T.Position = UDim2.new(0, 10, 0, 2)
+            -- 標題行 (可點擊收合)
+            local Header = Instance.new("TextButton", Sec)
+            Header.Size = UDim2.new(1, 0, 0, 32)
+            Header.BackgroundTransparency = 1
+            Header.Text = ""
+            Header.AutoButtonColor = false
+
+            local Arrow = Instance.new("TextLabel", Header)
+            Arrow.Size = UDim2.new(0, 20, 0, 20)
+            Arrow.Position = UDim2.new(0, 8, 0.5, -10)
+            Arrow.BackgroundTransparency = 1
+            Arrow.Text = "▶"
+            Arrow.TextColor3 = C.Accent
+            Arrow.Font = Enum.Font.GothamBold
+            Arrow.TextSize = 14
+
+            local T = Instance.new("TextLabel", Header)
+            T.Size = UDim2.new(1, -40, 1, 0)
+            T.Position = UDim2.new(0, 35, 0, 0)
             T.Text = txt:upper()
             T.TextColor3 = C.Accent
             T.Font = Enum.Font.GothamBold
@@ -171,14 +187,45 @@ function library.new(name)
 
             local Box = Instance.new("Frame", Sec)
             Box.Size = UDim2.new(1, 0, 0, 0)
-            Box.Position = UDim2.new(0, 0, 0, 28)
+            Box.Position = UDim2.new(0, 0, 0, 32)
             Box.BackgroundTransparency = 1
+            Box.ClipsDescendants = true  -- 收合時隱藏內容
             
             local bl = Instance.new("UIListLayout", Box)
             bl.Padding = UDim.new(0, 6)
             bl.HorizontalAlignment = Enum.HorizontalAlignment.Center
             bl:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-                Sec.Size = UDim2.new(0.98, 0, 0, bl.AbsoluteContentSize.Y + 38)
+                if Box.Visible then
+                    Sec.Size = UDim2.new(0.98, 0, 0, bl.AbsoluteContentSize.Y + 38)
+                end
+            end)
+
+            -- 收合邏輯
+            local isOpen = opened ~= false  -- 預設開啟，除非指定false
+            Box.Visible = isOpen
+            Arrow.Text = isOpen and "▼" or "▶"
+            if isOpen then
+                Sec.Size = UDim2.new(0.98, 0, 0, 0)  -- 先設0，之後自動調整
+            end
+
+            Header.MouseButton1Click:Connect(function()
+                isOpen = not isOpen
+                Arrow.Text = isOpen and "▼" or "▶"
+                
+                if isOpen then
+                    -- 展開動畫
+                    Tween(Sec, {0.3, Enum.EasingStyle.Back}, {Size = UDim2.new(0.98, 0, 0, bl.AbsoluteContentSize.Y + 38)})
+                    Box.Visible = true
+                    Tween(Arrow, {0.2}, {Rotation = 0})
+                else
+                    -- 收合動畫
+                    Tween(Sec, {0.3, Enum.EasingStyle.Back}, {Size = UDim2.new(0.98, 0, 0, 32)})
+                    task.delay(0.3, function() Box.Visible = false end)
+                    Tween(Arrow, {0.2}, {Rotation = -90})  -- 箭頭轉向更明顯
+                end
+                
+                -- 輕微發光效果
+                Tween(SecStroke, {0.2}, {Transparency = isOpen and 0.7 or 0.94})
             end)
 
             local e = {}
@@ -203,7 +250,9 @@ function library.new(name)
                 return b 
             end
 
+            -- Toggle 和 Textbox 保持原樣，塞進 Box
             function e:Toggle(t, cb)
+                -- ... (原 Toggle 代碼不變，直接貼上)
                 local b = Instance.new("TextButton", Box)
                 b.Size = UDim2.new(0.94, 0, 0, 32)
                 b.BackgroundColor3 = C.BtnBG
@@ -237,6 +286,7 @@ function library.new(name)
             end
 
             function e:Textbox(p, d, cb)
+                -- ... (原 Textbox 代碼不變)
                 local b = Instance.new("TextBox", Box)
                 b.Size = UDim2.new(0.94, 0, 0, 32)
                 b.BackgroundColor3 = Color3.fromRGB(20, 15, 20)
@@ -269,6 +319,7 @@ function library.new(name)
     end
 
     function window:AddDrag(obj)
+        -- 原拖拽不變
         local dragging, dragStart, startPos
         obj.InputBegan:Connect(function(input)
             if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
