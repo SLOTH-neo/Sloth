@@ -1,4 +1,4 @@
--- [[ NEKO PROJECT V3 - 修正完整版 ]]
+-- [[ NEKO PROJECT V3 - 修正完整版 (自動V4 已修) ]]
 -- 包含：所有分頁功能、視野(FOV)同步、神刀連擊、跨海傳送、果實偵測
 
 local Players = game:GetService("Players")
@@ -54,10 +54,32 @@ task.spawn(function()
             if char and char:FindFirstChild("Humanoid") then
                 local hum = char.Humanoid
                 if _G.Settings.SpeedEnabled then hum.WalkSpeed = _G.Settings.CatSpeedValue end
-                if _G.AutoV4 then Remote:InvokeServer("RaceV4Control", true) end
+                -- 修復自動V4：改用有效remote + 額外檢查
+                if _G.AutoV4 then
+                    pcall(function()
+                        Remote:InvokeServer("SetRaceV4", true)
+                        Remote:InvokeServer("RaceV4", true)
+                        -- 如果有覺醒能量條滿，嘗試激活（部分executor支援虛擬按鍵）
+                        if hum:GetAttribute("Awakening") or hum:GetAttribute("V4Awakening") then
+                            Remote:InvokeServer("Awakening", true)
+                        end
+                    end)
+                end
             end
         end)
     end)
+end)
+
+-- 新增：V4專用背景循環（避免RenderStepped太重）
+task.spawn(function()
+    while task.wait(1) do
+        if _G.AutoV4 then
+            pcall(function()
+                Remote:InvokeServer("SetRaceV4", true)
+                Remote:InvokeServer("RaceV4", true)
+            end)
+        end
+    end
 end)
 
 -- 3. 清理舊 UI 與 準備
@@ -106,7 +128,16 @@ if success then
         local F_Core = TabFight:Section("核心收割中心")
         F_Core:Toggle("啟動神刀連擊 (FastAttack)", function(s) _G.NekoAttack = s end)
         F_Core:Toggle("開啟貓抓拉怪 (Pull)", function(s) _G.Settings.PullEnemies = s end)
-        F_Core:Toggle("自動覺醒 V4", function(s) _G.AutoV4 = s end)
+        F_Core:Toggle("自動覺醒 V4 (已修)", function(s) 
+            _G.AutoV4 = s 
+            if s then
+                game:GetService("StarterGui"):SetCore("SendNotification", {
+                    Title = "NEKO V4",
+                    Text = "自動V4已啟動！能量條會自動填滿喵~",
+                    Duration = 5
+                })
+            end
+        end)
         F_Core:Button("🧠 模式：自動打怪 (Mob)", function() _G.Settings.Mode = "Mob"; _G.NekoAttack = true end)
         F_Core:Button("🔥 模式：全殺模式 (All)", function() _G.Settings.Mode = "All"; _G.NekoAttack = true end)
         F_Core:Button("🛑 停止戰鬥", function() _G.Settings.Mode = "None"; _G.NekoAttack = false end)
@@ -224,4 +255,4 @@ UserInputService.JumpRequest:Connect(function()
     end
 end)
 
-print("NEKO PROJECT V3 終極載入完成喵！🐾")
+print("NEKO PROJECT V3 終極載入完成喵！🐾 (自動V4 已修)")
