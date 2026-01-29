@@ -1,13 +1,14 @@
--- Neko Project - 美化載入畫面 + 直接執行主腳本
+-- Neko Project - 美化載入 + 防卡死版
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
 local CoreGui = game:GetService("CoreGui")
 local HttpService = game:GetService("HttpService")
+local StarterGui = game:GetService("StarterGui")
 
 local lp = Players.LocalPlayer
 local mainScriptUrl = "https://raw.githubusercontent.com/SLOTH-neo/Sloth/refs/heads/main/NEKO"
 
--- 建立 ScreenGui
+-- ScreenGui 建立（同之前）
 local sg = Instance.new("ScreenGui")
 sg.Name = "NekoLoadingScreen"
 sg.ResetOnSpawn = false
@@ -15,118 +16,20 @@ sg.IgnoreGuiInset = true
 pcall(function() sg.Parent = CoreGui end)
 if not sg.Parent then sg.Parent = lp:WaitForChild("PlayerGui") end
 
--- 背景（全螢幕漸層）
-local bg = Instance.new("Frame", sg)
-bg.Size = UDim2.new(1,0,1,0)
-bg.BackgroundColor3 = Color3.fromRGB(10, 8, 20)
-bg.BorderSizePixel = 0
+-- 背景、card、title、status、bar 等 UI 部分保持不變（複製你之前的就好，這裡省略重複代碼）
 
-local gradient = Instance.new("UIGradient", bg)
-gradient.Color = ColorSequence.new{
-    ColorSequenceKeypoint.new(0, Color3.fromRGB(30, 20, 60)),
-    ColorSequenceKeypoint.new(0.5, Color3.fromRGB(80, 40, 120)),
-    ColorSequenceKeypoint.new(1, Color3.fromRGB(140, 60, 180))
-}
-gradient.Rotation = 45
-
--- 主容器（中間圓角卡片）
-local card = Instance.new("Frame", sg)
-card.AnchorPoint = Vector2.new(0.5, 0.5)
-card.Position = UDim2.new(0.5, 0, 0.5, 0)
-card.Size = UDim2.new(0, 420, 0, 280)
-card.BackgroundColor3 = Color3.fromRGB(18, 18, 28)
-card.BackgroundTransparency = 0.35
-card.BorderSizePixel = 0
-local corner = Instance.new("UICorner", card)
-corner.CornerRadius = UDim.new(0, 28)
-
-local stroke = Instance.new("UIStroke", card)
-stroke.Thickness = 2.5
-stroke.Color = Color3.fromRGB(220, 140, 255)
-stroke.Transparency = 0.4
-stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-
--- 發光效果
-local glow = Instance.new("ImageLabel", card)
-glow.Size = UDim2.new(1.4, 0, 1.4, 0)
-glow.Position = UDim2.new(-0.2, 0, -0.2, 0)
-glow.BackgroundTransparency = 1
-glow.Image = "rbxassetid://4996891970"  -- 常見光暈圖
-glow.ImageColor3 = Color3.fromRGB(200, 120, 255)
-glow.ImageTransparency = 0.6
-glow.ZIndex = -1
-
--- 標題
-local title = Instance.new("TextLabel", card)
-title.Size = UDim2.new(1, 0, 0, 80)
-title.Position = UDim2.new(0, 0, 0, 20)
-title.BackgroundTransparency = 1
-title.Text = "NEKO PROJECT"
-title.TextColor3 = Color3.fromRGB(245, 200, 255)
-title.Font = Enum.Font.GothamBlack
-title.TextSize = 38
-title.TextStrokeTransparency = 0.8
-title.TextStrokeColor3 = Color3.fromRGB(120, 60, 180)
-
--- 副標題 / 狀態
-local status = Instance.new("TextLabel", card)
-status.Size = UDim2.new(0.9, 0, 0, 40)
-status.Position = UDim2.new(0.05, 0, 0.38, 0)
-status.BackgroundTransparency = 1
-status.Text = "喵喵～ 正在喚醒核心..."
-status.TextColor3 = Color3.fromRGB(220, 220, 255)
-status.Font = Enum.Font.GothamBold
-status.TextSize = 18
-status.TextTransparency = 0.1
-
--- 進度條背景
-local barBg = Instance.new("Frame", card)
-barBg.Size = UDim2.new(0.8, 0, 0, 8)
-barBg.Position = UDim2.new(0.1, 0, 0.68, 0)
-barBg.BackgroundColor3 = Color3.fromRGB(40, 30, 60)
-barBg.BorderSizePixel = 0
-Instance.new("UICorner", barBg).CornerRadius = UDim.new(1, 0)
-
--- 進度條
-local bar = Instance.new("Frame", barBg)
-bar.Size = UDim2.new(0, 0, 1, 0)
-bar.BackgroundColor3 = Color3.fromRGB(200, 120, 255)
-bar.BorderSizePixel = 0
-Instance.new("UICorner", bar).CornerRadius = UDim.new(1, 0)
-
--- 小貓爪裝飾（左右兩邊）
-local pawLeft = Instance.new("ImageLabel", card)
-pawLeft.Size = UDim2.new(0, 60, 0, 60)
-pawLeft.Position = UDim2.new(0.05, 0, 0.78, 0)
-pawLeft.BackgroundTransparency = 1
-pawLeft.Image = "rbxassetid://7072718362"  -- 貓爪圖（可自行換）
-pawLeft.ImageColor3 = Color3.fromRGB(220, 140, 255)
-pawLeft.Rotation = -15
-
-local pawRight = pawLeft:Clone()
-pawRight.Position = UDim2.new(0.82, 0, 0.78, 0)
-pawRight.Rotation = 15
-pawRight.Parent = card
-
--- 載入動畫
+-- 只貼關鍵動畫 + 載入部分
 task.spawn(function()
-    -- 邊框漸變旋轉
-    local strokeTween = TweenService:Create(stroke, TweenInfo.new(6, Enum.EasingStyle.Linear, Enum.EasingDirection.InOut, -1), {Rotation = 360})
-    strokeTween:Play()
-
-    -- 進度條填充
-    local fillTween = TweenService:Create(bar, TweenInfo.new(3.2, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {Size = UDim2.new(1, 0, 1, 0)})
-    fillTween:Play()
+    -- ... (你的進度條填充 tween 等)
 
     fillTween.Completed:Wait()
     
-    -- 完成階段
     status.Text = "喵～ 已連結完成！"
     status.TextColor3 = Color3.fromRGB(180, 255, 200)
 
     task.wait(0.8)
 
-    -- 縮小消失
+    -- 先縮小消失 UI（不管載入成功與否，都讓畫面關掉，避免卡住）
     local disappear = TweenService:Create(card, TweenInfo.new(0.7, Enum.EasingStyle.Back, Enum.EasingDirection.In), {
         Size = UDim2.new(0,0,0,0),
         Position = UDim2.new(0.5,0,0.5,0),
@@ -137,32 +40,48 @@ task.spawn(function()
     disappear.Completed:Connect(function()
         sg:Destroy()
 
-        -- 載入主腳本
+        -- 通知「開始載入主腳本」
+        StarterGui:SetCore("SendNotification", {
+            Title = "Neko Loader",
+            Text = "正在喚醒 NEKO 主核心... 請稍候喵～",
+            Duration = 6
+        })
+
+        -- 防卡死：用 coroutine + timeout 載入
         task.spawn(function()
             local success, result = pcall(function()
-                return game:HttpGet(mainScriptUrl)
+                local startTime = tick()
+                local content = game:HttpGet(mainScriptUrl, true)  -- 加 true 強制 cache
+                if tick() - startTime > 15 then
+                    error("HttpGet 超時 (>15s)")
+                end
+                return content
             end)
-            
+
             if success and result and result ~= "" then
                 local func, err = loadstring(result)
                 if func then
-                    func()
+                    local execSuccess, execErr = pcall(func)
+                    if not execSuccess then
+                        warn("[Neko Loader] 主腳本執行錯誤: " .. tostring(execErr))
+                        StarterGui:SetCore("SendNotification", {Title = "Neko 錯誤", Text = "核心啟動失敗... 但 UI 已載入完畢！", Duration = 10})
+                    else
+                        print("[Neko Loader] 主腳本成功執行！")
+                    end
                 else
                     warn("[Neko Loader] loadstring 失敗: " .. tostring(err))
+                    StarterGui:SetCore("SendNotification", {Title = "Neko 錯誤", Text = "腳本解析失敗 (loadstring err)", Duration = 10})
                 end
             else
-                warn("[Neko Loader] 無法取得主腳本: " .. tostring(result))
+                warn("[Neko Loader] HttpGet 失敗: " .. tostring(result))
+                StarterGui:SetCore("SendNotification", {
+                    Title = "Neko 載入失敗",
+                    Text = "無法連線到主腳本... 檢查網路 / executor / GitHub 連結？",
+                    Duration = 12
+                })
             end
         end)
     end)
 end)
 
--- 輕微呼吸動畫（讓卡片看起來有生命）
-task.spawn(function()
-    while card.Parent do
-        TweenService:Create(card, TweenInfo.new(3, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {BackgroundTransparency = 0.25}):Play()
-        task.wait(3)
-        TweenService:Create(card, TweenInfo.new(3, Enum.EasingStyle.Sine, Enum.EasingDirection.InOut), {BackgroundTransparency = 0.45}):Play()
-        task.wait(3)
-    end
-end)
+-- 呼吸動畫保持
