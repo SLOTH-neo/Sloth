@@ -1,6 +1,3 @@
--- [[ 🐾 NEKO PROJECT V3 - 手機輕量貓咪全狀態版 🐾 ]]
--- Delta 手機專用優化版 - FPS 穩 60+
-
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local CoreGui = game:GetService("CoreGui")
@@ -40,7 +37,6 @@ _G.V4Loaded    = false
 local Remote = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("CommF_")
 local function Sea(cmd) pcall(function() Remote:InvokeServer(cmd) end) end
 
--- 渲染循環（手機優化）
 task.spawn(function()
     local Camera = workspace.CurrentCamera
     RunService.RenderStepped:Connect(function()
@@ -59,23 +55,20 @@ task.spawn(function()
     end)
 end)
 
--- V4 單次載入（手機優化：只載一次）
 task.spawn(function()
     while true do
-        task.wait(3)  -- 改成3秒一次，大幅減輕負擔
+        task.wait(3)
         if _G.AutoV4 and not _G.V4Loaded then
             pcall(function()
                 loadstring(game:HttpGet("https://raw.githubusercontent.com/SLOTH-neo/Sloth/refs/heads/main/V4"))()
                 _G.V4Loaded = true
-                print("🐾 V4 腳本已載入一次")
             end)
         elseif not _G.AutoV4 then
-            _G.V4Loaded = false  -- 關閉後可重載
+            _G.V4Loaded = false
         end
     end
 end)
 
--- 清理舊UI
 local function NuclearClean()
     local targets = {"NEKO BF", "NekoUI", "NekoStickyMenu", "NekoMainBtn", "NekoFruitESP"}
     for _, name in ipairs(targets) do
@@ -83,11 +76,12 @@ local function NuclearClean()
         if obj then pcall(function() obj:Destroy() end) end
     end
 end
+
 NuclearClean()
+
 local FruitFolder = CoreGui:FindFirstChild("NekoFruitESP") or Instance.new("Folder", CoreGui)
 FruitFolder.Name = "NekoFruitESP"
 
--- 載入 library
 local success, UIContent = pcall(function()
     return game:HttpGet("https://raw.githubusercontent.com/SLOTH-neo/Sloth/main/UI")
 end)
@@ -101,7 +95,6 @@ if success then
     task.spawn(function()
         task.wait(0.6)
         
-        -- 🐾 貓咪狀態中心（手機優化：2秒更新一次）
         local TabStatus = myUI:Tab("🐾 貓咪狀態")
         local StatusSec = TabStatus:Section("喵喵狀態面板")
         
@@ -114,31 +107,22 @@ if success then
         StatusBtns.Jump = StatusSec:Button("🐾 跳躍：關閉", function() end)
         StatusBtns.Fruit = StatusSec:Button("🍎 果實：關閉", function() end)
         
-        -- 狀態更新（改成2秒一次，手機不卡）
         task.spawn(function()
-            while task.wait(2) do  -- 手機優化：2秒更新
+            while task.wait(2) do
                 pcall(function()
                     StatusBtns.Atk.Text = "⚔️ 攻擊：" .. (_G.NekoAttack and "🟢 喵喵狂砍中" or "🔴 喵喵休息中")
-                    
-                    local modeText = (_G.Settings.Mode == "Mob" and "👹 自動打怪") or 
-                                   (_G.Settings.Mode == "All" and "💀 全殺模式") or "😴 休息中"
+                    local modeText = (_G.Settings.Mode == "Mob" and "👹 自動打怪") or (_G.Settings.Mode == "All" and "💀 全殺模式") or "😴 休息中"
                     StatusBtns.Mode.Text = "🧠 模式：" .. modeText
-                    
                     StatusBtns.Speed.Text = "🐱 加速：" .. (_G.Settings.SpeedEnabled and "🟢 " .. _G.Settings.CatSpeedValue or "🔴 關閉")
-                    
                     StatusBtns.V4.Text = "✨ V4：" .. (_G.AutoV4 and "🟢 喵喵覺醒中" or "🔴 關閉")
-                    
                     StatusBtns.ESP.Text = "👁️ 透視：" .. (_G.NekoESP and "🟢 喵眼全開" or "🔴 關閉")
-                    
                     local jumpActive = _G.Settings.InfJump or _G.Settings.SuperJumpEnabled
                     StatusBtns.Jump.Text = "🐾 跳躍：" .. (jumpActive and "🟢 喵跳啟動" or "🔴 關閉")
-                    
                     StatusBtns.Fruit.Text = "🍎 果實：" .. (_G.Settings.FruitESP and "🟢 果實雷達" or "🔴 關閉")
                 end)
             end
         end)
 
-        -- ⚔️ 戰鬥系統
         local TabFight = myUI:Tab("⚔️ 戰鬥")
         local F_Core = TabFight:Section("核心收割")
         F_Core:Toggle("神刀連擊", function(s) _G.NekoAttack = s end)
@@ -157,7 +141,6 @@ if success then
         F_Core:Button("💀 全殺模式", function() _G.Settings.Mode = "All"; _G.NekoAttack = true end)
         F_Core:Button("🛑 停止戰鬥", function() _G.Settings.Mode = "None"; _G.NekoAttack = false end)
 
-        -- 👁️ 環境優化
         local TabEnv = myUI:Tab("👁️ 環境")
         local VisualSec = TabEnv:Section("視覺")
         VisualSec:Textbox("FOV", "80", function(v)
@@ -180,7 +163,6 @@ if success then
             loadstring(game:HttpGet("https://raw.githubusercontent.com/SLOTH-neo/Sloth/refs/heads/main/FPS"))()
         end)
 
-        -- 🐱 移動
         local TabMove = myUI:Tab("🐱 移動")
         local M1 = TabMove:Section("貓咪移動")
         M1:Toggle("貓咪加速", function(s) _G.Settings.SpeedEnabled = s end)
@@ -198,14 +180,12 @@ if success then
             loadstring(game:HttpGet("https://raw.githubusercontent.com/SLOTH-neo/Sloth/refs/heads/main/FLY"))()
         end)
 
-        -- 🌊 傳送
         local TabTP = myUI:Tab("🌊 傳送")
         local TP = TabTP:Section("跨海傳送")
         TP:Button("🏝️ 一海", function() Sea("TravelMain") end)
         TP:Button("🏰 二海", function() Sea("TravelDressrosa") end)
         TP:Button("🐘 三海", function() Sea("TravelZou") end)
 
-        -- 🍎 果實
         local TabFruit = myUI:Tab("🍎 果實")
         local FruitRadar = TabFruit:Section("果實雷達")
         FruitRadar:Toggle("果實透視", function(s) _G.Settings.FruitESP = s end)
@@ -222,7 +202,6 @@ if success then
         FruitSec:Toggle("自動抽果", function(s) _G.Settings.AutoBuyFruit = s end)
         FruitSec:Button("🎰 手動抽獎", function() Remote:InvokeServer("Cousin", "Buy") end)
 
-        -- 漂浮貓爪
         local MiniBtn = Instance.new("TextButton", screenGui)
         MiniBtn.Name = "NekoMainBtn"
         MiniBtn.Size = UDim2.new(0, 65, 0, 65)
@@ -249,21 +228,18 @@ if success then
             end
         end)
     end)
-else
-    print("🐾 UI載入失敗，請檢查網路喵～")
 end
 
--- 戰鬥核心（手機優化：加延遲）
 task.spawn(function()
     local RA = ReplicatedStorage.Modules.Net:WaitForChild("RE/RegisterAttack")
     local RH = ReplicatedStorage.Modules.Net:WaitForChild("RE/RegisterHit")
-    while task.wait(0.05) do  -- 手機優化：改成0.05秒
+    while task.wait(0.05) do
         if _G.NekoAttack then
             pcall(function()
                 local ts = {}
                 local function find(f)
                     for _, e in pairs(f:GetChildren()) do
-                        if #ts > 15 then break end  -- 手機優化：敵人上限15個
+                        if #ts > 15 then break end
                         if e:FindFirstChild("Humanoid") and e.Humanoid.Health > 0 then
                             local p = e:FindFirstChild("HumanoidRootPart") or e.PrimaryPart
                             if p and localPlayer:DistanceFromCharacter(p.Position) < _G.Settings.AtkRange then
@@ -287,5 +263,3 @@ UserInputService.JumpRequest:Connect(function()
         hum:ChangeState(Enum.HumanoidStateType.Jumping)
     end
 end)
-
-print("🐾 NEKO PROJECT V3 手機輕量版載入完成！FPS優化喵～")
