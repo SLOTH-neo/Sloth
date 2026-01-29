@@ -1,4 +1,4 @@
--- Neko Project - 美化載入 + 防卡死版
+-- Neko Project - 美化載入 + 延遲執行主腳本（防卡死）
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
 local CoreGui = game:GetService("CoreGui")
@@ -8,7 +8,7 @@ local StarterGui = game:GetService("StarterGui")
 local lp = Players.LocalPlayer
 local mainScriptUrl = "https://raw.githubusercontent.com/SLOTH-neo/Sloth/refs/heads/main/NEKO"
 
--- ScreenGui 建立（同之前）
+-- ScreenGui + UI 部分（保持你喜歡的漂亮版，省略重複代碼，直接貼關鍵）
 local sg = Instance.new("ScreenGui")
 sg.Name = "NekoLoadingScreen"
 sg.ResetOnSpawn = false
@@ -16,11 +16,11 @@ sg.IgnoreGuiInset = true
 pcall(function() sg.Parent = CoreGui end)
 if not sg.Parent then sg.Parent = lp:WaitForChild("PlayerGui") end
 
--- 背景、card、title、status、bar 等 UI 部分保持不變（複製你之前的就好，這裡省略重複代碼）
+-- 背景、card、title、status、bar、pawLeft/pawRight 等 UI 保持原樣...
 
--- 只貼關鍵動畫 + 載入部分
+-- 動畫部分
 task.spawn(function()
-    -- ... (你的進度條填充 tween 等)
+    -- 邊框旋轉、進度條填充等（你的原 tween）
 
     fillTween.Completed:Wait()
     
@@ -29,7 +29,7 @@ task.spawn(function()
 
     task.wait(0.8)
 
-    -- 先縮小消失 UI（不管載入成功與否，都讓畫面關掉，避免卡住）
+    -- 先關閉 UI（避免卡在畫面）
     local disappear = TweenService:Create(card, TweenInfo.new(0.7, Enum.EasingStyle.Back, Enum.EasingDirection.In), {
         Size = UDim2.new(0,0,0,0),
         Position = UDim2.new(0.5,0,0.5,0),
@@ -40,48 +40,53 @@ task.spawn(function()
     disappear.Completed:Connect(function()
         sg:Destroy()
 
-        -- 通知「開始載入主腳本」
         StarterGui:SetCore("SendNotification", {
             Title = "Neko Loader",
-            Text = "正在喚醒 NEKO 主核心... 請稍候喵～",
-            Duration = 6
+            Text = "主核心延遲啟動中... 請稍候 3 秒喵～（防卡死）",
+            Duration = 8
         })
 
-        -- 防卡死：用 coroutine + timeout 載入
+        -- 先 HttpGet + loadstring（獨立執行緒）
         task.spawn(function()
-            local success, result = pcall(function()
-                local startTime = tick()
-                local content = game:HttpGet(mainScriptUrl, true)  -- 加 true 強制 cache
-                if tick() - startTime > 15 then
-                    error("HttpGet 超時 (>15s)")
-                end
-                return content
+            local success, content = pcall(function()
+                return game:HttpGet(mainScriptUrl, true)
             end)
 
-            if success and result and result ~= "" then
-                local func, err = loadstring(result)
-                if func then
-                    local execSuccess, execErr = pcall(func)
-                    if not execSuccess then
-                        warn("[Neko Loader] 主腳本執行錯誤: " .. tostring(execErr))
-                        StarterGui:SetCore("SendNotification", {Title = "Neko 錯誤", Text = "核心啟動失敗... 但 UI 已載入完畢！", Duration = 10})
-                    else
-                        print("[Neko Loader] 主腳本成功執行！")
-                    end
+            if success and content and content ~= "" then
+                local loaderFunc, err = loadstring(content)
+                if loaderFunc then
+                    -- 關鍵：延遲 3 秒再執行主腳本，讓客戶端緩衝
+                    task.delay(3, function()
+                        local execSuccess, execErr = pcall(loaderFunc)
+                        if execSuccess then
+                            print("[Neko Loader] 主腳本延遲執行成功！")
+                            StarterGui:SetCore("SendNotification", {
+                                Title = "NEKO 已喚醒",
+                                Text = "核心啟動完成～ 享受吧喵🐾",
+                                Duration = 6
+                            })
+                        else
+                            warn("[Neko Loader] 主腳本執行失敗: " .. tostring(execErr))
+                            StarterGui:SetCore("SendNotification", {
+                                Title = "啟動出問題",
+                                Text = "核心啟動卡住了... 試試重開 Roblox？",
+                                Duration = 10
+                            })
+                        end
+                    end)
                 else
                     warn("[Neko Loader] loadstring 失敗: " .. tostring(err))
-                    StarterGui:SetCore("SendNotification", {Title = "Neko 錯誤", Text = "腳本解析失敗 (loadstring err)", Duration = 10})
                 end
             else
-                warn("[Neko Loader] HttpGet 失敗: " .. tostring(result))
+                warn("[Neko Loader] HttpGet 失敗: " .. tostring(content))
                 StarterGui:SetCore("SendNotification", {
-                    Title = "Neko 載入失敗",
-                    Text = "無法連線到主腳本... 檢查網路 / executor / GitHub 連結？",
-                    Duration = 12
+                    Title = "連線失敗",
+                    Text = "無法抓到主腳本... 檢查網路或 executor",
+                    Duration = 10
                 })
             end
         end)
     end)
 end)
 
--- 呼吸動畫保持
+-- 呼吸動畫保持...
