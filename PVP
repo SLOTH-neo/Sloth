@@ -1,13 +1,9 @@
--- [[PVP]] --
 local Players           = game:GetService("Players")
 local Player            = Players.LocalPlayer
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService        = game:GetService("RunService")
 local Camera            = workspace.CurrentCamera
 
--- =============================================================
--- 🛠️ 1. 基礎工具與安全檢查 (已移除外部 FPS 連結)
--- =============================================================
 local function SafeWaitForChild(parent, childName)
     local success, result = pcall(function() return parent:WaitForChild(childName, 5) end)
     return success and result or nil
@@ -43,9 +39,6 @@ local function GetRandomValidPart(target)
     return #validParts > 0 and validParts[math.random(1, #validParts)] or target:FindFirstChild("HumanoidRootPart")
 end
 
--- =============================================================
--- 👀 2. 視野與移動加速系統 (對接主腳本變數)
--- =============================================================
 task.spawn(function()
     while true do
         if _G.NekoRunning and _G.Settings then
@@ -69,33 +62,6 @@ RunService.Heartbeat:Connect(function()
     end
 end)
 
--- =============================================================
--- 🔥 3. 自動 V4 覺醒系統
--- =============================================================
-task.spawn(function()
-    while true do
-        task.wait(1)
-        if _G.NekoRunning and _G.AutoV4 then
-            pcall(function()
-                local char = Player.Character
-                local backpack = Player:FindFirstChild("Backpack")
-                local Awakening = (char and char:FindFirstChild("Awakening")) or 
-                                  (backpack and backpack:FindFirstChild("Awakening"))
-                
-                if Awakening then
-                    local RemoteFunc = Awakening:FindFirstChild("RemoteFunction")
-                    if RemoteFunc and RemoteFunc:IsA("RemoteFunction") then
-                        RemoteFunc:InvokeServer(true)
-                    end
-                end
-            end)
-        end
-    end
-end)
-
--- =============================================================
--- ⚔️ 4. 神刀攻擊引擎 (完全還原主人邏輯)
--- =============================================================
 local FastAttack = {
     Distance = 2000,
     attackMobs = true,
@@ -161,29 +127,3 @@ task.spawn(function()
         end
     end
 end)
-
--- =============================================================
--- 📍 5. 智慧黏人引擎
--- =============================================================
-RunService.Heartbeat:Connect(function()
-    if _G.NekoRunning and _G.Settings.StickyEnabled and _G.Settings.StickyTarget then
-        pcall(function()
-            local myChar = Player.Character
-            local tChar = _G.Settings.StickyTarget.Character
-            if myChar and tChar and IsAlive(tChar) then
-                local myRoot = myChar.HumanoidRootPart
-                local tRoot = tChar.HumanoidRootPart
-                local goalCF = tRoot.CFrame * (_G.Settings.StickyOffset or CFrame.new(3, 0, 7))
-                local dist = (myRoot.Position - goalCF.Position).Magnitude
-                
-                if dist > (_G.Settings.SnapDistance or 500) then
-                    myRoot.CFrame = goalCF 
-                else
-                    myRoot.CFrame = myRoot.CFrame:Lerp(goalCF, _G.Settings.LerpSpeed or 0.35)
-                end
-            end
-        end)
-    end
-end)
-
-print("🐾 NEKO 核心功能 (PVP) 已清理外部連結並完成對接喵！")
