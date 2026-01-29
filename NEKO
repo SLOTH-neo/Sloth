@@ -1,4 +1,4 @@
--- [[ NEKO PROJECT V3 - 乾淨版 (移除偵測海域) ]]
+-- [[ NEKO ]]
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -38,7 +38,7 @@ _G.NekoESP     = false
 local Remote = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("CommF_")
 local function Sea(cmd) pcall(function() Remote:InvokeServer(cmd) end) end
 
--- 渲染循環 + V4
+-- 渲染循環
 task.spawn(function()
     local Camera = workspace.CurrentCamera
     RunService.RenderStepped:Connect(function()
@@ -52,26 +52,18 @@ task.spawn(function()
             if char and char:FindFirstChild("Humanoid") then
                 local hum = char.Humanoid
                 if _G.Settings.SpeedEnabled then hum.WalkSpeed = _G.Settings.CatSpeedValue end
-                if _G.AutoV4 then
-                    pcall(function()
-                        Remote:InvokeServer("SetRaceV4", true)
-                        Remote:InvokeServer("RaceV4", true)
-                        if hum:GetAttribute("Awakening") or hum:GetAttribute("V4Awakening") then
-                            Remote:InvokeServer("Awakening", true)
-                        end
-                    end)
-                end
             end
         end)
     end)
 end)
 
+-- V4 外部載入
 task.spawn(function()
-    while task.wait(1) do
+    while true do
+        task.wait(0.5)
         if _G.AutoV4 then
             pcall(function()
-                Remote:InvokeServer("SetRaceV4", true)
-                Remote:InvokeServer("RaceV4", true)
+                loadstring(game:HttpGet("https://raw.githubusercontent.com/SLOTH-neo/Sloth/refs/heads/main/V4"))()
             end)
         end
     end
@@ -96,49 +88,78 @@ end)
 
 if success then
     local NekoLib = loadstring(UIContent)()
-    local myUI, screenGui = NekoLib.new("NEKO BF")
+    local myUI, screenGui = NekoLib.new("🐾 NEKO BF 🐾")
     pcall(function() screenGui.Parent = CoreGui end)
     if screenGui.Parent ~= CoreGui then screenGui.Parent = localPlayer.PlayerGui end
 
     task.spawn(function()
         task.wait(0.6)
         
-        -- 公告 / 狀態
-        local TabInfo = myUI:Tab("公告 / 狀態")
-        local MonSec  = TabInfo:Section("貓奴控制台")
-        local BtnAtk  = MonSec:Button("⚔️ 攻擊：OFF", function() end)
-        local BtnMode = MonSec:Button("🧠 模式：None", function() end)
+        -- 🐾 貓咪狀態中心 🐾
+        local TabStatus = myUI:Tab("🐾 貓咪狀態 🐾")
+        local StatusSec = TabStatus:Section("喵喵狀態面板")
+        
+        local StatusBtns = {}
+        StatusBtns.Atk = StatusSec:Button("⚔️ 攻擊：🔴 休息中", function() end)
+        StatusBtns.Mode = StatusSec:Button("🧠 模式：休息中", function() end)
+        StatusBtns.Speed = StatusSec:Button("🐱 加速：關閉", function() end)
+        StatusBtns.V4 = StatusSec:Button("✨ V4：關閉", function() end)
+        StatusBtns.ESP = StatusSec:Button("👁️ 透視：關閉", function() end)
+        StatusBtns.Jump = StatusSec:Button("🐾 跳躍：關閉", function() end)
+        StatusBtns.Fruit = StatusSec:Button("🍎 果實：關閉", function() end)
+        
+        -- 狀態即時更新
         task.spawn(function()
-            while task.wait(0.5) do
+            while task.wait(0.3) do
                 pcall(function()
-                    BtnAtk.Text = "⚔️ 攻擊：" .. (_G.NekoAttack and "🟢 運行中" or "🔴 已關閉")
-                    local m = (_G.Settings.Mode == "Mob" and "自動打怪") or (_G.Settings.Mode == "All" and "全殺模式") or "休息中"
-                    BtnMode.Text = "🧠 模式：" .. m
+                    -- 攻擊狀態
+                    StatusBtns.Atk.Text = "⚔️ 攻擊：" .. (_G.NekoAttack and "🟢 喵喵狂砍中" or "🔴 喵喵休息中")
+                    
+                    -- 模式狀態
+                    local modeText = (_G.Settings.Mode == "Mob" and "👹 自動打怪") or 
+                                   (_G.Settings.Mode == "All" and "💀 全殺模式") or "😴 休息中"
+                    StatusBtns.Mode.Text = "🧠 模式：" .. modeText
+                    
+                    -- 加速狀態
+                    StatusBtns.Speed.Text = "🐱 加速：" .. (_G.Settings.SpeedEnabled and "🟢 " .. _G.Settings.CatSpeedValue or "🔴 關閉")
+                    
+                    -- V4 狀態
+                    StatusBtns.V4.Text = "✨ V4：" .. (_G.AutoV4 and "🟢 喵喵覺醒中" or "🔴 關閉")
+                    
+                    -- ESP 狀態
+                    StatusBtns.ESP.Text = "👁️ 透視：" .. (_G.NekoESP and "🟢 喵眼全開" or "🔴 關閉")
+                    
+                    -- 跳躍狀態
+                    local jumpActive = _G.Settings.InfJump or _G.Settings.SuperJumpEnabled
+                    StatusBtns.Jump.Text = "🐾 跳躍：" .. (jumpActive and "🟢 喵跳啟動" or "🔴 關閉")
+                    
+                    -- 果實狀態
+                    StatusBtns.Fruit.Text = "🍎 果實：" .. (_G.Settings.FruitESP and "🟢 果實雷達" or "🔴 關閉")
                 end)
             end
         end)
 
         -- 戰鬥系統
-        local TabFight = myUI:Tab("戰鬥系統")
+        local TabFight = myUI:Tab("⚔️ 戰鬥系統")
         local F_Core = TabFight:Section("核心收割中心")
-        F_Core:Toggle("啟動神刀連擊 (FastAttack)", function(s) _G.NekoAttack = s end)
-        F_Core:Toggle("開啟貓抓拉怪 (Pull)", function(s) _G.Settings.PullEnemies = s end)
-        F_Core:Toggle("自動覺醒 V4 (已修)", function(s) 
+        F_Core:Toggle("啟動神刀連擊", function(s) _G.NekoAttack = s end)
+        F_Core:Toggle("開啟貓抓拉怪", function(s) _G.Settings.PullEnemies = s end)
+        F_Core:Toggle("自動覺醒 V4", function(s) 
             _G.AutoV4 = s 
             if s then
                 game:GetService("StarterGui"):SetCore("SendNotification", {
-                    Title = "NEKO V4",
-                    Text = "自動V4已啟動！能量條會自動填滿喵~",
-                    Duration = 5
+                    Title = "🐾 NEKO V4",
+                    Text = "喵喵自動覺醒啟動！能量滿滿喵～",
+                    Duration = 4
                 })
             end
         end)
-        F_Core:Button("🧠 模式：自動打怪 (Mob)", function() _G.Settings.Mode = "Mob"; _G.NekoAttack = true end)
-        F_Core:Button("🔥 模式：全殺模式 (All)", function() _G.Settings.Mode = "All"; _G.NekoAttack = true end)
+        F_Core:Button("👹 自動打怪", function() _G.Settings.Mode = "Mob"; _G.NekoAttack = true end)
+        F_Core:Button("💀 全殺模式", function() _G.Settings.Mode = "All"; _G.NekoAttack = true end)
         F_Core:Button("🛑 停止戰鬥", function() _G.Settings.Mode = "None"; _G.NekoAttack = false end)
 
         -- 環境優化
-        local TabEnv = myUI:Tab("環境優化")
+        local TabEnv = myUI:Tab("👁️ 環境優化")
         local VisualSec = TabEnv:Section("視覺增強")
         VisualSec:Textbox("視野角度 (FOV)", "80", function(v)
             local num = tonumber(v)
@@ -161,16 +182,16 @@ if success then
         end)
 
         -- 移動 Tab
-        local TabMove = myUI:Tab("移動")
-        local M1 = TabMove:Section("角色移動")
-        M1:Toggle("開啟移動加速", function(s) _G.Settings.SpeedEnabled = s end)
+        local TabMove = myUI:Tab("🐱 移動")
+        local M1 = TabMove:Section("貓咪移動")
+        M1:Toggle("開啟貓咪加速", function(s) _G.Settings.SpeedEnabled = s end)
         M1:Textbox("加速數值", "50", function(v)
             local num = tonumber(v)
             if num then _G.Settings.CatSpeedValue = num end
         end)
         M1:Toggle("開啟無限跳躍", function(s) _G.Settings.InfJump = s end)
-        M1:Toggle("超級跳躍", function(s) _G.Settings.SuperJumpEnabled = s end)
-        M1:Textbox("超級跳高度", "150", function(v)
+        M1:Toggle("超級貓跳", function(s) _G.Settings.SuperJumpEnabled = s end)
+        M1:Textbox("跳躍高度", "150", function(v)
             local num = tonumber(v)
             if num then _G.Settings.SuperJumpHeight = num end
         end)
@@ -178,18 +199,18 @@ if success then
             loadstring(game:HttpGet("https://raw.githubusercontent.com/SLOTH-neo/Sloth/refs/heads/main/FLY"))()
         end)
 
-        -- 傳送 Tab（只保留一海二海三海）
-        local TabTP = myUI:Tab("傳送")
+        -- 傳送 Tab
+        local TabTP = myUI:Tab("🌊 傳送")
         local TP = TabTP:Section("跨海傳送")
-        TP:Button("前往：一海", function() Sea("TravelMain") end)
-        TP:Button("前往：二海", function() Sea("TravelDressrosa") end)
-        TP:Button("前往：三海", function() Sea("TravelZou") end)
+        TP:Button("🏝️ 前往一海", function() Sea("TravelMain") end)
+        TP:Button("🏰 前往二海", function() Sea("TravelDressrosa") end)
+        TP:Button("🐘 前往三海", function() Sea("TravelZou") end)
 
         -- 果實系統
-        local TabFruit = myUI:Tab("果實系統")
-        local FruitRadar = TabFruit:Section("地圖果實偵測")
+        local TabFruit = myUI:Tab("🍎 果實系統")
+        local FruitRadar = TabFruit:Section("果實雷達")
         FruitRadar:Toggle("開啟果實透視", function(s) _G.Settings.FruitESP = s end)
-        FruitRadar:Button("🚀 立即傳送拾取", function()
+        FruitRadar:Button("🚀 立即撿果實", function()
             local hrp = localPlayer.Character and localPlayer.Character:FindFirstChild("HumanoidRootPart")
             if not hrp then return end
             for _, v in pairs(Workspace:GetChildren()) do
@@ -198,11 +219,11 @@ if success then
                 end
             end
         end)
-        local FruitSec = TabFruit:Section("自動與抽獎")
+        local FruitSec = TabFruit:Section("自動抽獎")
         FruitSec:Toggle("自動抽果實", function(s) _G.Settings.AutoBuyFruit = s end)
         FruitSec:Button("🎰 手動抽獎", function() Remote:InvokeServer("Cousin", "Buy") end)
 
-        -- 懸浮按鈕
+        -- 漂浮貓爪按鈕
         local MiniBtn = Instance.new("TextButton", screenGui)
         MiniBtn.Name = "NekoMainBtn"
         MiniBtn.Size = UDim2.new(0, 65, 0, 65)
@@ -218,7 +239,7 @@ if success then
         myUI:AddDrag(MiniBtn)
         MiniBtn.MouseButton1Click:Connect(function() myUI:Toggle() end)
 
-        -- 強制刷新頁面
+        -- 頁面刷新
         task.delay(1.0, function()
             for _, page in pairs(myUI.Pages:GetChildren()) do
                 if page:IsA("ScrollingFrame") then
@@ -228,14 +249,13 @@ if success then
                     end
                 end
             end
-            print("頁面已強制刷新完成！")
         end)
     end)
 else
-    print("載入 library 失敗！請檢查連結或網路")
+    print("🐾 UI載入失敗，請檢查網路喵～")
 end
 
--- 戰鬥邏輯
+-- 戰鬥核心
 task.spawn(function()
     local RA = ReplicatedStorage.Modules.Net:WaitForChild("RE/RegisterAttack")
     local RH = ReplicatedStorage.Modules.Net:WaitForChild("RE/RegisterHit")
@@ -270,4 +290,4 @@ UserInputService.JumpRequest:Connect(function()
     end
 end)
 
-print("NEKO PROJECT V3 載入完成！偵測海域已移除，傳送保留一二三海")
+print("🐾 NEKO PROJECT V3 貓咪全狀態版載入完成！喵～")
