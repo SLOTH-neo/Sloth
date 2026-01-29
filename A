@@ -1,92 +1,84 @@
--- Neko Project - 美化載入 + 延遲執行主腳本（防卡死）
-local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
 local CoreGui = game:GetService("CoreGui")
-local HttpService = game:GetService("HttpService")
 local StarterGui = game:GetService("StarterGui")
+local Players = game:GetService("Players")
 
-local lp = Players.LocalPlayer
-local mainScriptUrl = "https://raw.githubusercontent.com/SLOTH-neo/Sloth/refs/heads/main/NEKO"
+local player = Players.LocalPlayer
+local scriptUrl = "https://raw.githubusercontent.com/SLOTH-neo/Sloth/refs/heads/main/NEKO"
 
--- ScreenGui + UI 部分（保持你喜歡的漂亮版，省略重複代碼，直接貼關鍵）
+-- ── ScreenGui 與 UI 元件建立（用你喜歡的美化版，直接貼進來） ──
 local sg = Instance.new("ScreenGui")
-sg.Name = "NekoLoadingScreen"
-sg.ResetOnSpawn = false
+sg.Name = "NekoLoading"
 sg.IgnoreGuiInset = true
-pcall(function() sg.Parent = CoreGui end)
-if not sg.Parent then sg.Parent = lp:WaitForChild("PlayerGui") end
+sg.ResetOnSpawn = false
+sg.Parent = CoreGui or player:WaitForChild("PlayerGui")
 
--- 背景、card、title、status、bar、pawLeft/pawRight 等 UI 保持原樣...
+-- 背景、card、title、status、bar、pawLeft、pawRight、gradient、stroke 等全部放這裡
+-- （假設你已經有這些變數：card, title, status, barBg, bar, fillTween 等）
 
--- 動畫部分
-task.spawn(function()
-    -- 邊框旋轉、進度條填充等（你的原 tween）
+-- ── 開始動畫 ──
+local fillTween = TweenService:Create(bar, TweenInfo.new(3, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {Size = UDim2.new(1, 0, 1, 0)})
+fillTween:Play()
 
-    fillTween.Completed:Wait()
-    
-    status.Text = "喵～ 已連結完成！"
+fillTween.Completed:Connect(function()
+    status.Text = "核心已喚醒！"
     status.TextColor3 = Color3.fromRGB(180, 255, 200)
 
     task.wait(0.8)
 
-    -- 先關閉 UI（避免卡在畫面）
-    local disappear = TweenService:Create(card, TweenInfo.new(0.7, Enum.EasingStyle.Back, Enum.EasingDirection.In), {
-        Size = UDim2.new(0,0,0,0),
-        Position = UDim2.new(0.5,0,0.5,0),
+    -- 先完整關閉 UI
+    local closeTween = TweenService:Create(card, TweenInfo.new(0.7, Enum.EasingStyle.Back, Enum.EasingDirection.In), {
+        Size = UDim2.new(0, 0, 0, 0),
+        Position = UDim2.new(0.5, 0, 0.5, 0),
         BackgroundTransparency = 1
     })
-    disappear:Play()
+    closeTween:Play()
 
-    disappear.Completed:Connect(function()
+    TweenService:Create(bg, TweenInfo.new(0.9), {BackgroundTransparency = 1}):Play()  -- 如果有全屏 bg
+
+    closeTween.Completed:Connect(function()
         sg:Destroy()
 
+        -- UI 完全消失後，才開始載入主腳本
         StarterGui:SetCore("SendNotification", {
-            Title = "Neko Loader",
-            Text = "主核心延遲啟動中... 請稍候 3 秒喵～（防卡死）",
-            Duration = 8
+            Title = "NEKO PROJECT",
+            Text = "UI 已關閉，現在啟動主核心... 請稍候",
+            Duration = 6
         })
 
-        -- 先 HttpGet + loadstring（獨立執行緒）
         task.spawn(function()
+            print("[Loader] UI 已關閉，開始 HttpGet")
             local success, content = pcall(function()
-                return game:HttpGet(mainScriptUrl, true)
+                return game:HttpGet(scriptUrl, true)
             end)
 
             if success and content and content ~= "" then
-                local loaderFunc, err = loadstring(content)
-                if loaderFunc then
-                    -- 關鍵：延遲 3 秒再執行主腳本，讓客戶端緩衝
-                    task.delay(3, function()
-                        local execSuccess, execErr = pcall(loaderFunc)
-                        if execSuccess then
-                            print("[Neko Loader] 主腳本延遲執行成功！")
-                            StarterGui:SetCore("SendNotification", {
-                                Title = "NEKO 已喚醒",
-                                Text = "核心啟動完成～ 享受吧喵🐾",
-                                Duration = 6
-                            })
-                        else
-                            warn("[Neko Loader] 主腳本執行失敗: " .. tostring(execErr))
-                            StarterGui:SetCore("SendNotification", {
-                                Title = "啟動出問題",
-                                Text = "核心啟動卡住了... 試試重開 Roblox？",
-                                Duration = 10
-                            })
-                        end
-                    end)
+                print("[Loader] HttpGet 成功，長度: " .. #content)
+                local func, err = loadstring(content)
+                if func then
+                    print("[Loader] loadstring 成功，執行中...")
+                    local ok, execErr = pcall(func)
+                    if ok then
+                        print("[Loader] 主腳本執行完畢")
+                        StarterGui:SetCore("SendNotification", {
+                            Title = "NEKO 已啟動",
+                            Text = "享受吧～ 喵🐾",
+                            Duration = 5
+                        })
+                    else
+                        warn("[Loader] 主腳本內部錯誤: " .. tostring(execErr))
+                    end
                 else
-                    warn("[Neko Loader] loadstring 失敗: " .. tostring(err))
+                    warn("[Loader] loadstring 失敗: " .. tostring(err))
                 end
             else
-                warn("[Neko Loader] HttpGet 失敗: " .. tostring(content))
+                warn("[Loader] HttpGet 失敗: " .. tostring(content))
                 StarterGui:SetCore("SendNotification", {
-                    Title = "連線失敗",
-                    Text = "無法抓到主腳本... 檢查網路或 executor",
+                    Title = "載入失敗",
+                    Text = "無法取得主腳本，請檢查網路或 executor",
                     Duration = 10
                 })
             end
         end)
     end)
 end)
-
--- 呼吸動畫保持...
