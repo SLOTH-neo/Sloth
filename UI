@@ -1,198 +1,200 @@
-local TweenService = game:GetService("TweenService")
-local UserInputService = game:GetService("UserInputService")
-local CoreGui = game:GetService("CoreGui")
+local library = {}
 
-local Library = {}
-Library.__index = Library
+local services = setmetatable({}, {
+    __index = function(_, k)
+        return game:GetService(k)
+    end
+})
 
-function Library.new(title)
-    local ScreenGui = Instance.new("ScreenGui")
-    ScreenGui.Name = title
-    ScreenGui.Parent = CoreGui
-    ScreenGui.ResetOnSpawn = false
+local TweenService = services.TweenService
+local UserInputService = services.UserInputService
 
-    local Main = Instance.new("Frame", ScreenGui)
-    Main.Size = UDim2.new(0, 520, 0, 380)
-    Main.Position = UDim2.new(0.5, -260, 0.5, -190)
-    Main.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
-    Main.BorderSizePixel = 0
+local Colors = {
+    Accent   = Color3.fromRGB(255,120,180),
+    BG       = Color3.fromRGB(18,18,22),
+    Side     = Color3.fromRGB(14,14,18),
+    Section  = Color3.fromRGB(28,28,34),
+    Button   = Color3.fromRGB(40,40,48),
+    Text     = Color3.fromRGB(235,235,240),
+    SubText  = Color3.fromRGB(150,150,165),
+    Stroke   = Color3.fromRGB(255,140,195)
+}
 
-    Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 12)
-
-    local Title = Instance.new("TextLabel", Main)
-    Title.Size = UDim2.new(1, -20, 0, 42)
-    Title.Position = UDim2.new(0, 10, 0, 8)
-    Title.Text = title
-    Title.Font = Enum.Font.GothamBold
-    Title.TextSize = 22
-    Title.TextColor3 = Color3.fromRGB(255, 140, 190)
-    Title.BackgroundTransparency = 1
-    Title.TextXAlignment = Left
-
-    local Tabs = Instance.new("Frame", Main)
-    Tabs.Size = UDim2.new(0, 140, 1, -60)
-    Tabs.Position = UDim2.new(0, 10, 0, 52)
-    Tabs.BackgroundTransparency = 1
-
-    local Pages = Instance.new("Frame", Main)
-    Pages.Size = UDim2.new(1, -170, 1, -60)
-    Pages.Position = UDim2.new(0, 160, 0, 52)
-    Pages.BackgroundTransparency = 1
-
-    local TabLayout = Instance.new("UIListLayout", Tabs)
-    TabLayout.Padding = UDim.new(0, 6)
-
-    local UI = setmetatable({
-        ScreenGui = ScreenGui,
-        Main = Main,
-        Tabs = Tabs,
-        Pages = Pages,
-        CurrentPage = nil
-    }, Library)
-
-    return UI, ScreenGui
+local function tween(o,t,p)
+    local tw = TweenService:Create(o,TweenInfo.new(unpack(t)),p)
+    tw:Play()
 end
 
-function Library:Tab(name)
-    local Button = Instance.new("TextButton", self.Tabs)
-    Button.Size = UDim2.new(1, 0, 0, 36)
-    Button.Text = name
-    Button.Font = Enum.Font.Gotham
-    Button.TextSize = 15
-    Button.TextColor3 = Color3.fromRGB(235, 235, 240)
-    Button.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
-    Button.BorderSizePixel = 0
-    Instance.new("UICorner", Button).CornerRadius = UDim.new(0, 8)
+function library.new(title)
+    local gui = Instance.new("ScreenGui", services.CoreGui)
+    gui.Name = "NekoUI"
+    gui.ResetOnSpawn = false
 
-    local Page = Instance.new("ScrollingFrame", self.Pages)
-    Page.Size = UDim2.new(1, 0, 1, 0)
-    Page.CanvasSize = UDim2.new(0, 0, 0, 0)
-    Page.ScrollBarThickness = 4
-    Page.Visible = false
-    Page.BackgroundTransparency = 1
+    local main = Instance.new("Frame", gui)
+    main.Size = UDim2.new(0,520,0,360)
+    main.Position = UDim2.new(0.5,-260,0.5,-180)
+    main.BackgroundColor3 = Colors.BG
+    main.BorderSizePixel = 0
+    Instance.new("UICorner", main).CornerRadius = UDim.new(0,16)
 
-    local Layout = Instance.new("UIListLayout", Page)
-    Layout.Padding = UDim.new(0, 10)
+    local stroke = Instance.new("UIStroke", main)
+    stroke.Color = Colors.Stroke
+    stroke.Thickness = 1.5
+    stroke.Transparency = 0.4
 
-    Button.MouseButton1Click:Connect(function()
-        if self.CurrentPage then
-            self.CurrentPage.Visible = false
-        end
-        self.CurrentPage = Page
-        Page.Visible = true
-    end)
+    local side = Instance.new("Frame", main)
+    side.Size = UDim2.new(0,150,1,0)
+    side.BackgroundColor3 = Colors.Side
+    side.BorderSizePixel = 0
+    Instance.new("UICorner", side).CornerRadius = UDim.new(0,16)
 
-    if not self.CurrentPage then
-        self.CurrentPage = Page
-        Page.Visible = true
-    end
+    local titleLabel = Instance.new("TextLabel", side)
+    titleLabel.Size = UDim2.new(1,0,0,50)
+    titleLabel.Text = title
+    titleLabel.Font = Enum.Font.GothamBold
+    titleLabel.TextSize = 18
+    titleLabel.TextColor3 = Colors.Accent
+    titleLabel.BackgroundTransparency = 1
 
-    local Tab = {}
+    local tabs = Instance.new("UIListLayout", side)
+    tabs.Padding = UDim.new(0,6)
+    tabs.HorizontalAlignment = Enum.HorizontalAlignment.Center
+    tabs.VerticalAlignment = Enum.VerticalAlignment.Top
 
-    function Tab:Section(text)
-        local Section = Instance.new("Frame", Page)
-        Section.Size = UDim2.new(1, -6, 0, 40)
-        Section.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
-        Section.BorderSizePixel = 0
-        Instance.new("UICorner", Section).CornerRadius = UDim.new(0, 8)
+    local pages = Instance.new("Frame", main)
+    pages.Size = UDim2.new(1,-170,1,-20)
+    pages.Position = UDim2.new(0,160,0,10)
+    pages.BackgroundTransparency = 1
 
-        local Label = Instance.new("TextLabel", Section)
-        Label.Size = UDim2.new(1, -16, 1, 0)
-        Label.Position = UDim2.new(0, 8, 0, 0)
-        Label.Text = text
-        Label.Font = Enum.Font.GothamMedium
-        Label.TextSize = 16
-        Label.TextColor3 = Color3.fromRGB(255, 210, 230)
-        Label.BackgroundTransparency = 1
-        Label.TextXAlignment = Left
+    local window = {}
+    window.current = nil
 
-        local Content = Instance.new("Frame", Page)
-        Content.Size = UDim2.new(1, -6, 0, 0)
-        Content.BackgroundTransparency = 1
+    function window:Tab(name)
+        local btn = Instance.new("TextButton", side)
+        btn.Size = UDim2.new(1,-20,0,36)
+        btn.Text = name
+        btn.Font = Enum.Font.Gotham
+        btn.TextSize = 14
+        btn.TextColor3 = Colors.Text
+        btn.BackgroundColor3 = Colors.Button
+        btn.BorderSizePixel = 0
+        Instance.new("UICorner", btn).CornerRadius = UDim.new(0,8)
 
-        local ContentLayout = Instance.new("UIListLayout", Content)
-        ContentLayout.Padding = UDim.new(0, 6)
+        local page = Instance.new("ScrollingFrame", pages)
+        page.Size = UDim2.new(1,0,1,0)
+        page.CanvasSize = UDim2.new(0,0,0,0)
+        page.ScrollBarThickness = 4
+        page.Visible = false
+        page.BackgroundTransparency = 1
 
-        ContentLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-            Content.Size = UDim2.new(1, -6, 0, ContentLayout.AbsoluteContentSize.Y)
-            Page.CanvasSize = UDim2.new(0, 0, 0, Layout.AbsoluteContentSize.Y)
+        local layout = Instance.new("UIListLayout", page)
+        layout.Padding = UDim.new(0,10)
+        layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+            page.CanvasSize = UDim2.new(0,0,0,layout.AbsoluteContentSize.Y + 10)
         end)
 
-        local SectionAPI = {}
+        btn.MouseButton1Click:Connect(function()
+            if window.current then
+                window.current.Visible = false
+            end
+            window.current = page
+            page.Visible = true
+        end)
 
-        function SectionAPI:Button(text, callback)
-            local Btn = Instance.new("TextButton", Content)
-            Btn.Size = UDim2.new(1, 0, 0, 36)
-            Btn.Text = text
-            Btn.Font = Enum.Font.Gotham
-            Btn.TextSize = 15
-            Btn.TextColor3 = Color3.fromRGB(245, 245, 245)
-            Btn.BackgroundColor3 = Color3.fromRGB(40, 40, 55)
-            Btn.BorderSizePixel = 0
-            Instance.new("UICorner", Btn).CornerRadius = UDim.new(0, 8)
-            Btn.MouseButton1Click:Connect(callback)
-            return Btn
-        end
+        local tab = {}
 
-        function SectionAPI:Toggle(text, callback)
-            local Toggle = Instance.new("TextButton", Content)
-            Toggle.Size = UDim2.new(1, 0, 0, 36)
-            Toggle.Text = text
-            Toggle.Font = Enum.Font.Gotham
-            Toggle.TextSize = 15
-            Toggle.TextColor3 = Color3.fromRGB(245, 245, 245)
-            Toggle.BackgroundColor3 = Color3.fromRGB(45, 45, 60)
-            Toggle.BorderSizePixel = 0
-            Instance.new("UICorner", Toggle).CornerRadius = UDim.new(0, 8)
+        function tab:Section(text)
+            local sec = Instance.new("Frame", page)
+            sec.Size = UDim2.new(1,-10,0,40)
+            sec.BackgroundColor3 = Colors.Section
+            sec.BorderSizePixel = 0
+            Instance.new("UICorner", sec).CornerRadius = UDim.new(0,10)
 
-            local State = false
-            Toggle.MouseButton1Click:Connect(function()
-                State = not State
-                callback(State)
+            local label = Instance.new("TextLabel", sec)
+            label.Size = UDim2.new(1,-20,0,30)
+            label.Position = UDim2.new(0,10,0,5)
+            label.Text = text
+            label.Font = Enum.Font.GothamSemibold
+            label.TextSize = 14
+            label.TextColor3 = Colors.Text
+            label.BackgroundTransparency = 1
+            label.TextXAlignment = Left
+
+            local holder = Instance.new("UIListLayout", sec)
+            holder.Padding = UDim.new(0,6)
+            holder.VerticalAlignment = Enum.VerticalAlignment.Top
+
+            holder:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+                sec.Size = UDim2.new(1,-10,0,holder.AbsoluteContentSize.Y + 10)
             end)
 
-            return Toggle
+            local section = {}
+
+            function section:Button(text, cb)
+                local b = Instance.new("TextButton", sec)
+                b.Size = UDim2.new(1,-20,0,34)
+                b.Text = text
+                b.Font = Enum.Font.Gotham
+                b.TextSize = 13
+                b.TextColor3 = Colors.Text
+                b.BackgroundColor3 = Colors.Button
+                b.BorderSizePixel = 0
+                Instance.new("UICorner", b).CornerRadius = UDim.new(0,8)
+                b.MouseButton1Click:Connect(function()
+                    if cb then cb() end
+                end)
+                return b
+            end
+
+            function section:Toggle(text, cb)
+                local state = false
+                local t = self:Button(text .. " : OFF", function()
+                    state = not state
+                    t.Text = text .. (state and " : ON" or " : OFF")
+                    if cb then cb(state) end
+                end)
+                return t
+            end
+
+            return section
         end
 
-        return SectionAPI
+        if not window.current then
+            window.current = page
+            page.Visible = true
+        end
+
+        return tab
     end
 
-    return Tab
+    function window:AddDrag(obj)
+        local drag, start, startPos
+        obj.InputBegan:Connect(function(i)
+            if i.UserInputType == Enum.UserInputType.MouseButton1 then
+                drag = true
+                start = i.Position
+                startPos = obj.Position
+                i.Changed:Connect(function()
+                    if i.UserInputState == Enum.UserInputState.End then
+                        drag = false
+                    end
+                end)
+            end
+        end)
+        UserInputService.InputChanged:Connect(function(i)
+            if drag and i.UserInputType == Enum.UserInputType.MouseMovement then
+                local delta = i.Position - start
+                obj.Position = UDim2.new(
+                    startPos.X.Scale,
+                    startPos.X.Offset + delta.X,
+                    startPos.Y.Scale,
+                    startPos.Y.Offset + delta.Y
+                )
+            end
+        end)
+    end
+
+    return window, gui
 end
 
-function Library:AddDrag(frame)
-    local dragging, dragInput, startPos, startFramePos
-
-    frame.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then
-            dragging = true
-            startPos = input.Position
-            startFramePos = frame.Position
-            input.Changed:Connect(function()
-                if input.UserInputState == Enum.UserInputState.End then
-                    dragging = false
-                end
-            end)
-        end
-    end)
-
-    frame.InputChanged:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseMovement then
-            dragInput = input
-        end
-    end)
-
-    UserInputService.InputChanged:Connect(function(input)
-        if input == dragInput and dragging then
-            local delta = input.Position - startPos
-            frame.Position = UDim2.new(
-                startFramePos.X.Scale,
-                startFramePos.X.Offset + delta.X,
-                startFramePos.Y.Scale,
-                startFramePos.Y.Offset + delta.Y
-            )
-        end
-    end)
-end
-
-return Library
+return library
