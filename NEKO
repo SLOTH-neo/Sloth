@@ -11,12 +11,12 @@ if getgenv().NEKO_RUNNING then return end
 getgenv().NEKO_RUNNING = true
 
 _G.Settings = {
-    ClickDelay    = 0.1,
+    ClickDelay    = 0.2,
     AtkRange      = 2500,
     PullEnemies   = false,
     Mode          = "None",
     FOV           = 120,
-    MaxZoom       = 128,
+    MaxZoom       = 1000,
     CatSpeedValue = 50,
     SpeedEnabled  = false,
     InfJump       = false,
