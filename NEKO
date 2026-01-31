@@ -10,10 +10,10 @@ local localPlayer = Players.LocalPlayer
 if getgenv().NEKO_RUNNING then return end
 getgenv().NEKO_RUNNING = true
 
-StarterGui:SetCore("SendNotification", {Title = "NEKO BF", Text = "腳本啟動中... 載入 Sloth UI 喵～", Duration = 6})
+StarterGui:SetCore("SendNotification", {Title = "NEKO BF", Text = "腳本啟動中...", Duration = 6})
 
 _G.Settings = {
-    ClickDelay    = 0.2,
+    ClickDelay    = 0.3,
     AtkRange      = 2500,
     PullEnemies   = false,
     Mode          = "None",
@@ -82,7 +82,7 @@ end
 NuclearClean()
 
 local library = loadstring(game:HttpGet("https://raw.githubusercontent.com/SLOTH-neo/Sloth/refs/heads/main/UI"))()
-local window = library.new("🐾 NEKO BF 🐾")
+local window = library.new("🐾 貓腳本 🐾")
 
 local sea2Locations = {
     ["天鵝的房間"] = CFrame.new(-287.37, 305.81, 592.98),
@@ -324,4 +324,4 @@ end)
 
 window:Toggle(true)
 
-StarterGui:SetCore("SendNotification", {Title = "NEKO BF", Text = "啟動成功！右下角粉紅 NEKO 按鈕可拖曳 + 點擊開/關 UI 喵～", Duration = 10})
+StarterGui:SetCore("SendNotification", {Title = "NEKO BF", Text = "啟動成功～歡迎使用貓腳本", Duration = 10})
