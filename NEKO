@@ -3,15 +3,14 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local CoreGui = game:GetService("CoreGui")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
-local TweenService = game:GetService("TweenService")
-local Workspace = game:GetService("Workspace")
 local StarterGui = game:GetService("StarterGui")
+local Workspace = game:GetService("Workspace")
 local localPlayer = Players.LocalPlayer
 
 if getgenv().NEKO_RUNNING then return end
 getgenv().NEKO_RUNNING = true
 
-StarterGui:SetCore("SendNotification", {Title = "NEKO BF", Text = "腳本啟動中... 載入 WindUI 喵～", Duration = 6})
+StarterGui:SetCore("SendNotification", {Title = "NEKO BF", Text = "腳本啟動中... 載入 Sloth UI 喵～", Duration = 6})
 
 _G.Settings = {
     ClickDelay    = 0.2,
@@ -49,7 +48,6 @@ task.spawn(function()
             Camera.FieldOfView = _G.Settings.FOV
             localPlayer.CameraMaxZoomDistance = _G.Settings.MaxZoom
             localPlayer.CameraMinZoomDistance = 0
-            
             local char = localPlayer.Character
             if char and char:FindFirstChild("Humanoid") then
                 local hum = char.Humanoid
@@ -74,214 +72,256 @@ task.spawn(function()
 end)
 
 local function NuclearClean()
-    local targets = {"NEKO BF", "NekoUI", "NekoStickyMenu", "NekoMainBtn", "NekoFruitESP"}
+    local targets = {"Neko_PinkCyber_UI"}
     for _, name in ipairs(targets) do
-        local obj = CoreGui:FindFirstChild(name) or localPlayer.PlayerGui:FindFirstChild(name)
+        local obj = CoreGui:FindFirstChild(name)
         if obj then pcall(function() obj:Destroy() end) end
     end
 end
 
 NuclearClean()
 
-local FruitFolder = CoreGui:FindFirstChild("NekoFruitESP") or Instance.new("Folder", CoreGui)
-FruitFolder.Name = "NekoFruitESP"
+local library = loadstring(game:HttpGet("https://raw.githubusercontent.com/SLOTH-neo/Sloth/refs/heads/main/UI"))()
+local window = library.new("🐾 NEKO BF 🐾")
 
-local success, WindUIContent = pcall(function()
-    return game:HttpGet("https://raw.githubusercontent.com/Footagesus/WindUI/main/main.lua")
+local sea2Locations = {
+    ["天鵝的房間"] = CFrame.new(-287.37, 305.81, 592.98),
+    ["豪宅"] = CFrame.new(2286.93, 15.06, 910.51),
+    ["鬼船裡"] = CFrame.new(-6501.06, 83.11, -123.52),
+    ["鬼船外"] = CFrame.new(922.78, 123.96, 32842.40)
+}
+
+local sea3Locations = {
+    ["海洋城堡"] = CFrame.new(-12463.60, 376.26, -7566.08),
+    ["海龜豪宅"] = CFrame.new(-5060.41, 316.43, -3192.30),
+    ["司法"] = CFrame.new(-5096.48, 316.43, -3177.91),
+    ["九頭蛇"] = CFrame.new(-5027.03, 316.43, -3206.07)
+}
+
+local function TeleportTo(cf, name)
+    local char = localPlayer.Character
+    if char and char:FindFirstChild("HumanoidRootPart") then
+        char.HumanoidRootPart.CFrame = cf
+    end
+end
+
+local function TravelSea(seaRemote)
+    pcall(function()
+        ReplicatedStorage.Remotes.CommF_:InvokeServer(seaRemote)
+    end)
+end
+
+local statusTab = window:Tab("🐾 貓咪狀態")
+local statusSec = statusTab:Section("喵喵狀態面板")
+
+local atkStatus = statusSec:Button("⚔️ 攻擊：🔴 休息中")
+local modeStatus = statusSec:Button("🧠 模式：休息中")
+local speedStatus = statusSec:Button("🐱 加速：關閉")
+local v4Status = statusSec:Button("✨ V4：關閉")
+local espStatus = statusSec:Button("👁️ 透視：關閉")
+local jumpStatus = statusSec:Button("🐾 跳躍：關閉")
+local fruitStatus = statusSec:Button("🍎 果實：關閉")
+
+task.spawn(function()
+    while task.wait(1.5) do
+        pcall(function()
+            atkStatus.Text = "⚔️ 攻擊：" .. (_G.NekoAttack and "🟢 狂砍中" or "🔴 休息中")
+            local modeText = (_G.Settings.Mode == "Mob" and "👹 自動打怪") or (_G.Settings.Mode == "All" and "💀 全殺模式") or "😴 休息中"
+            modeStatus.Text = "🧠 模式：" .. modeText
+            speedStatus.Text = "🐱 加速：" .. (_G.Settings.SpeedEnabled and "🟢 " .. _G.Settings.CatSpeedValue or "🔴 關閉")
+            v4Status.Text = "✨ V4：" .. (_G.AutoV4 and "🟢 覺醒中" or "🔴 關閉")
+            espStatus.Text = "👁️ 透視：" .. (_G.NekoESP and "🟢 全開" or "🔴 關閉")
+            local jumpActive = _G.Settings.InfJump or _G.Settings.SuperJumpEnabled
+            jumpStatus.Text = "🐾 跳躍：" .. (jumpActive and "🟢 啟動" or "🔴 關閉")
+            fruitStatus.Text = "🍎 果實：" .. (_G.Settings.FruitESP and "🟢 雷達" or "🔴 關閉")
+        end)
+    end
 end)
 
-if success then
-    local WindUILoadSuccess, WindUI = pcall(loadstring(WindUIContent))
-    if not WindUILoadSuccess then
-        warn("[NEKO] WindUI loadstring 失敗: " .. tostring(WindUI))
-        StarterGui:SetCore("SendNotification", {Title = "NEKO 錯誤", Text = "WindUI 載入失敗，請檢查連結或 executor", Duration = 10})
-        return
+local fightTab = window:Tab("⚔️ 戰鬥")
+local fightSec = fightTab:Section("核心收割")
+fightSec:Toggle("神刀連擊", function(s) _G.NekoAttack = s end)
+fightSec:Toggle("貓抓拉怪", function(s) _G.Settings.PullEnemies = s end)
+fightSec:Toggle("自動 V4", function(s) 
+    _G.AutoV4 = s 
+    if s then
+        StarterGui:SetCore("SendNotification", {Title = "NEKO V4", Text = "自動覺醒啟動！喵～", Duration = 4})
     end
+end)
+fightSec:Button("👹 自動打怪", function() _G.Settings.Mode = "Mob"; _G.NekoAttack = true end)
+fightSec:Button("💀 全殺模式", function() _G.Settings.Mode = "All"; _G.NekoAttack = true end)
+fightSec:Button("🛑 停止戰鬥", function() _G.Settings.Mode = "None"; _G.NekoAttack = false end)
 
-    local Window = WindUI:CreateWindow({
-        Title = "🐾 NEKO BF 🐾",
-        Icon = "rbxassetid://7733960981",
-        Author = "喵喵外掛",
-        Folder = "NekoBF",
-        Size = UDim2.fromOffset(580, 490),
-        Theme = "Dark",
-        Acrylic = false,
-        OpenButton = {
-            Title = "開啟 NEKO",
-            CornerRadius = UDim.new(1, 0),
-            Color = ColorSequence.new(Color3.fromRGB(255, 100, 180), Color3.fromRGB(255, 200, 255))
-        }
-    })
+local envTab = window:Tab("👁️ 環境")
+local visualSec = envTab:Section("視覺")
+visualSec:Textbox("FOV (30-160)", tostring(_G.Settings.FOV), function(v)
+    local num = tonumber(v)
+    if num then _G.Settings.FOV = math.clamp(num, 30, 160) end
+end)
+visualSec:Textbox("Zoom (1-10000)", tostring(_G.Settings.MaxZoom), function(v)
+    local num = tonumber(v)
+    if num then _G.Settings.MaxZoom = math.clamp(num, 1, 10000) end
+end)
+visualSec:Toggle("貓貓透視", function(s)
+    _G.NekoESP = s
+    if s and not _G.ESPLoaded then
+        _G.ESPLoaded = true
+        pcall(function()
+            loadstring(game:HttpGet("https://raw.githubusercontent.com/SLOTH-neo/Sloth/refs/heads/main/ESP"))()
+        end)
+    end
+end)
 
-    StarterGui:SetCore("SendNotification", {Title = "NEKO BF", Text = "WindUI 載入成功！初始化介面...", Duration = 4})
-
-    local TabStatus = Window:Tab({ Title = "🐾 貓咪狀態", Icon = "rbxassetid://7733960981" })
-    local StatusSec = TabStatus:Section({ Title = "喵喵狀態面板", Opened = true })
-    
-    local StatusBtns = {}
-    StatusBtns.Atk = StatusSec:Button({ Title = "⚔️ 攻擊：🔴 休息中" })
-    StatusBtns.Mode = StatusSec:Button({ Title = "🧠 模式：休息中" })
-    StatusBtns.Speed = StatusSec:Button({ Title = "🐱 加速：關閉" })
-    StatusBtns.V4 = StatusSec:Button({ Title = "✨ V4：關閉" })
-    StatusBtns.ESP = StatusSec:Button({ Title = "👁️ 透視：關閉" })
-    StatusBtns.Jump = StatusSec:Button({ Title = "🐾 跳躍：關閉" })
-    StatusBtns.Fruit = StatusSec:Button({ Title = "🍎 果實：關閉" })
-    
-    task.spawn(function()
-        while task.wait(2) do
-            pcall(function()
-                StatusBtns.Atk.Title = "⚔️ 攻擊：" .. (_G.NekoAttack and "🟢 喵喵狂砍中" or "🔴 喵喵休息中")
-                local modeText = (_G.Settings.Mode == "Mob" and "👹 自動打怪") or (_G.Settings.Mode == "All" and "💀 全殺模式") or "😴 休息中"
-                StatusBtns.Mode.Title = "🧠 模式：" .. modeText
-                StatusBtns.Speed.Title = "🐱 加速：" .. (_G.Settings.SpeedEnabled and "🟢 " .. _G.Settings.CatSpeedValue or "🔴 關閉")
-                StatusBtns.V4.Title = "✨ V4：" .. (_G.AutoV4 and "🟢 喵喵覺醒中" or "🔴 關閉")
-                StatusBtns.ESP.Title = "👁️ 透視：" .. (_G.NekoESP and "🟢 喵眼全開" or "🔴 關閉")
-                local jumpActive = _G.Settings.InfJump or _G.Settings.SuperJumpEnabled
-                StatusBtns.Jump.Title = "🐾 跳躍：" .. (jumpActive and "🟢 喵跳啟動" or "🔴 關閉")
-                StatusBtns.Fruit.Title = "🍎 果實：" .. (_G.Settings.FruitESP and "🟢 果實雷達" or "🔴 關閉")
-            end)
-        end
+local effSec = envTab:Section("效能")
+effSec:Button("FPS 優化", function()
+    pcall(function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/SLOTH-neo/Sloth/refs/heads/main/FPS"))()
     end)
+end)
 
-    local TabFight = Window:Tab({ Title = "⚔️ 戰鬥", Icon = "rbxassetid://7733960981" })
-    local F_Core = TabFight:Section({ Title = "核心收割", Opened = true })
-    F_Core:Toggle({ Title = "神刀連擊", Callback = function(s) _G.NekoAttack = s end })
-    F_Core:Toggle({ Title = "貓抓拉怪", Callback = function(s) _G.Settings.PullEnemies = s end })
-    F_Core:Toggle({ Title = "自動 V4", Callback = function(s) 
-        _G.AutoV4 = s 
-        if s then
-            StarterGui:SetCore("SendNotification", {
-                Title = "🐾 NEKO V4",
-                Text = "喵喵自動覺醒啟動！能量滿滿喵～",
-                Duration = 4
-            })
+local moveTab = window:Tab("🐱 移動")
+local moveSec = moveTab:Section("貓咪移動")
+moveSec:Toggle("貓咪加速", function(s) _G.Settings.SpeedEnabled = s end)
+moveSec:Textbox("加速數值", tostring(_G.Settings.CatSpeedValue), function(v)
+    local num = tonumber(v)
+    if num then _G.Settings.CatSpeedValue = num end
+end)
+moveSec:Toggle("無限跳躍", function(s) _G.Settings.InfJump = s end)
+moveSec:Toggle("超級貓跳", function(s) _G.Settings.SuperJumpEnabled = s end)
+moveSec:Textbox("跳躍高度", tostring(_G.Settings.SuperJumpHeight), function(v)
+    local num = tonumber(v)
+    if num then _G.Settings.SuperJumpHeight = num end
+end)
+moveSec:Button("貓貓飛行器", function()
+    pcall(function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/SLOTH-neo/Sloth/refs/heads/main/FLY"))()
+    end)
+end)
+
+local tpTab = window:Tab("🌊 傳送")
+local tpSec = tpTab:Section("跨海傳送")
+tpSec:Button("🏝️ 一海", function() TravelSea("TravelMain") end)
+tpSec:Button("🏰 二海", function() TravelSea("TravelDressrosa") end)
+tpSec:Button("🐘 三海", function() TravelSea("TravelZou") end)
+tpSec:Button("天鵝的房間", function() TeleportTo(sea2Locations["天鵝的房間"], "天鵝的房間") end)
+tpSec:Button("豪宅", function() TeleportTo(sea2Locations["豪宅"], "豪宅") end)
+tpSec:Button("鬼船裡", function() TeleportTo(sea2Locations["鬼船裡"], "鬼船裡") end)
+tpSec:Button("鬼船外", function() TeleportTo(sea2Locations["鬼船外"], "鬼船外") end)
+tpSec:Button("海洋城堡", function() TeleportTo(sea3Locations["海洋城堡"], "海洋城堡") end)
+tpSec:Button("海龜豪宅", function() TeleportTo(sea3Locations["海龜豪宅"], "海龜豪宅") end)
+tpSec:Button("司法", function() TeleportTo(sea3Locations["司法"], "司法") end)
+tpSec:Button("九頭蛇", function() TeleportTo(sea3Locations["九頭蛇"], "九頭蛇") end)
+
+local fruitTab = window:Tab("🍎 果實")
+local radarSec = fruitTab:Section("果實雷達")
+radarSec:Toggle("果實透視", function(s) _G.Settings.FruitESP = s end)
+radarSec:Button("🚀 立即撿果", function()
+    local hrp = localPlayer.Character and localPlayer.Character:FindFirstChild("HumanoidRootPart")
+    if not hrp then return end
+    for _, v in pairs(Workspace:GetChildren()) do
+        if v:IsA("Tool") and (v.Name:find("Fruit") or v:FindFirstChild("Handle")) then
+            hrp.CFrame = (v:FindFirstChild("Handle") or v.PrimaryPart).CFrame + Vector3.new(0, 2, 0)
         end
-    end })
-    F_Core:Button({ Title = "👹 自動打怪", Callback = function() _G.Settings.Mode = "Mob"; _G.NekoAttack = true end })
-    F_Core:Button({ Title = "💀 全殺模式", Callback = function() _G.Settings.Mode = "All"; _G.NekoAttack = true end })
-    F_Core:Button({ Title = "🛑 停止戰鬥", Callback = function() _G.Settings.Mode = "None"; _G.NekoAttack = false end })
+    end
+end)
 
-    local TabEnv = Window:Tab({ Title = "👁️ 環境", Icon = "rbxassetid://7733960981" })
-    local VisualSec = TabEnv:Section({ Title = "視覺", Opened = true })
-    VisualSec:Input({ Title = "FOV", Value = "80", Callback = function(v)
-        local num = tonumber(v)
-        if num then _G.Settings.FOV = math.clamp(num, 30, 160) end
-    end })
-    VisualSec:Input({ Title = "Zoom", Value = "128", Callback = function(v)
-        local num = tonumber(v)
-        if num then _G.Settings.MaxZoom = math.clamp(num, 1, 10000) end
-    end })
-    VisualSec:Toggle({ Title = "貓貓透視", Callback = function(s)
-        _G.NekoESP = s
-        if s and not _G.ESPLoaded then
-            _G.ESPLoaded = true
+local drawSec = fruitTab:Section("抽獎")
+drawSec:Toggle("自動抽果", function(s) _G.Settings.AutoBuyFruit = s end)
+drawSec:Button("🎰 手動抽獎", function() Remote:InvokeServer("Cousin", "Buy") end)
+
+task.spawn(function()
+    local RA = ReplicatedStorage.Modules.Net:WaitForChild("RE/RegisterAttack")
+    local RH = ReplicatedStorage.Modules.Net:WaitForChild("RE/RegisterHit")
+    while task.wait(0.05) do
+        if _G.NekoAttack then
             pcall(function()
-                loadstring(game:HttpGet("https://raw.githubusercontent.com/SLOTH-neo/Sloth/refs/heads/main/ESP"))()
-            end)
-        end
-    end })
-    local EffSec = TabEnv:Section({ Title = "效能", Opened = true })
-    EffSec:Button({ Title = "FPS 優化", Callback = function()
-        pcall(function()
-            loadstring(game:HttpGet("https://raw.githubusercontent.com/SLOTH-neo/Sloth/refs/heads/main/FPS"))()
-        end)
-    end })
-    
-    local AppearanceSec = TabEnv:Section({ Title = "外觀主題", Opened = true })
-    AppearanceSec:Dropdown({ Title = "選擇主題", Options = WindUI:GetThemes(), Callback = function(selected)
-        WindUI:SetTheme(selected)
-        StarterGui:SetCore("SendNotification", {Title = "NEKO 主題", Text = "切換到 " .. selected .. " 喵～", Duration = 3})
-    end })
-    AppearanceSec:Toggle({ Title = "切換 Dark/Light", Callback = function(s)
-        WindUI:SetTheme(s and "Light" or "Dark")
-        StarterGui:SetCore("SendNotification", {Title = "NEKO 主題", Text = "切換到 " .. (s and "Light" or "Dark") .. " 喵～", Duration = 3})
-    end })
-    AppearanceSec:Button({ Title = "創建新主題", Callback = function()
-        Window:Dialog({
-            Title = "創建主題",
-            Content = "這功能還沒實作（coming soon），喵～",
-            Buttons = { { Title = "OK", Variant = "Primary" } }
-        })
-    end })
-
-    local TabMove = Window:Tab({ Title = "🐱 移動", Icon = "rbxassetid://7733960981" })
-    local M1 = TabMove:Section({ Title = "貓咪移動", Opened = true })
-    M1:Toggle({ Title = "貓咪加速", Callback = function(s) _G.Settings.SpeedEnabled = s end })
-    M1:Input({ Title = "加速數值", Value = "50", Callback = function(v)
-        local num = tonumber(v)
-        if num then _G.Settings.CatSpeedValue = num end
-    end })
-    M1:Toggle({ Title = "無限跳躍", Callback = function(s) _G.Settings.InfJump = s end })
-    M1:Toggle({ Title = "超級貓跳", Callback = function(s) _G.Settings.SuperJumpEnabled = s end })
-    M1:Input({ Title = "跳躍高度", Value = "150", Callback = function(v)
-        local num = tonumber(v)
-        if num then _G.Settings.SuperJumpHeight = num end
-    end })
-    M1:Button({ Title = "貓貓飛行器", Callback = function()
-        pcall(function()
-            loadstring(game:HttpGet("https://raw.githubusercontent.com/SLOTH-neo/Sloth/refs/heads/main/FLY"))()
-        end)
-    end })
-
-    local TabTP = Window:Tab({ Title = "🌊 傳送", Icon = "rbxassetid://7733960981" })
-    local TP = TabTP:Section({ Title = "跨海傳送", Opened = true })
-    TP:Button({ Title = "🏝️ 一海", Callback = function() Sea("TravelMain") end })
-    TP:Button({ Title = "🏰 二海", Callback = function() Sea("TravelDressrosa") end })
-    TP:Button({ Title = "🐘 三海", Callback = function() Sea("TravelZou") end })
-
-    local TabFruit = Window:Tab({ Title = "🍎 果實", Icon = "rbxassetid://7733960981" })
-    local FruitRadar = TabFruit:Section({ Title = "果實雷達", Opened = true })
-    FruitRadar:Toggle({ Title = "果實透視", Callback = function(s) _G.Settings.FruitESP = s end })
-    FruitRadar:Button({ Title = "🚀 立即撿果", Callback = function()
-        local hrp = localPlayer.Character and localPlayer.Character:FindFirstChild("HumanoidRootPart")
-        if not hrp then return end
-        for _, v in pairs(Workspace:GetChildren()) do
-            if v:IsA("Tool") and (v.Name:find("Fruit") or v:FindFirstChild("Handle")) then
-                hrp.CFrame = (v:FindFirstChild("Handle") or v.PrimaryPart).CFrame + Vector3.new(0, 2, 0)
-            end
-        end
-    end })
-    local FruitSec = TabFruit:Section({ Title = "抽獎", Opened = true })
-    FruitSec:Toggle({ Title = "自動抽果", Callback = function(s) _G.Settings.AutoBuyFruit = s end })
-    FruitSec:Button({ Title = "🎰 手動抽獎", Callback = function() Remote:InvokeServer("Cousin", "Buy") end })
-
-    task.spawn(function()
-        local RA = ReplicatedStorage.Modules.Net:WaitForChild("RE/RegisterAttack")
-        local RH = ReplicatedStorage.Modules.Net:WaitForChild("RE/RegisterHit")
-        while task.wait(0.05) do
-            if _G.NekoAttack then
-                pcall(function()
-                    local ts = {}
-                    local function find(f)
-                        for _, e in pairs(f:GetChildren()) do
-                            if #ts > 15 then break end
-                            if e:FindFirstChild("Humanoid") and e.Humanoid.Health > 0 then
-                                local p = e:FindFirstChild("HumanoidRootPart") or e.PrimaryPart
-                                if p and localPlayer:DistanceFromCharacter(p.Position) < _G.Settings.AtkRange then
-                                    table.insert(ts, {e, p})
-                                end
+                local ts = {}
+                local function find(f)
+                    for _, e in pairs(f:GetChildren()) do
+                        if #ts > 15 then break end
+                        if e:FindFirstChild("Humanoid") and e.Humanoid.Health > 0 then
+                            local p = e:FindFirstChild("HumanoidRootPart") or e.PrimaryPart
+                            if p and localPlayer:DistanceFromCharacter(p.Position) < _G.Settings.AtkRange then
+                                table.insert(ts, {e, p})
                             end
                         end
                     end
-                    if _G.Settings.Mode == "All" then find(workspace.Enemies); find(workspace.Characters)
-                    elseif _G.Settings.Mode == "Mob" then find(workspace.Enemies) end
-                    if #ts > 0 then RA:FireServer(_G.Settings.ClickDelay); RH:FireServer(ts[1][2], ts) end
-                end)
+                end
+                if _G.Settings.Mode == "All" then find(workspace.Enemies); find(workspace.Characters)
+                elseif _G.Settings.Mode == "Mob" then find(workspace.Enemies) end
+                if #ts > 0 then RA:FireServer(_G.Settings.ClickDelay); RH:FireServer(ts[1][2], ts) end
+            end)
+        end
+    end
+end)
+
+UserInputService.JumpRequest:Connect(function()
+    local hum = localPlayer.Character and localPlayer.Character:FindFirstChildOfClass("Humanoid")
+    if hum and (_G.Settings.InfJump or _G.Settings.SuperJumpEnabled) then
+        if _G.Settings.SuperJumpEnabled then hum.JumpPower = _G.Settings.SuperJumpHeight end
+        hum:ChangeState(Enum.HumanoidStateType.Jumping)
+    end
+end)
+
+-- 浮動收合按鈕（手機友好）
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "NekoToggleGui"
+screenGui.Parent = CoreGui
+screenGui.ResetOnSpawn = false
+
+local toggleBtn = Instance.new("ImageButton")
+toggleBtn.Size = UDim2.new(0, 60, 0, 60)
+toggleBtn.Position = UDim2.new(1, -80, 1, -80)
+toggleBtn.BackgroundColor3 = Color3.fromRGB(255, 105, 180)
+toggleBtn.BackgroundTransparency = 0.3
+toggleBtn.Image = "rbxassetid://7733960981"
+toggleBtn.ImageColor3 = Color3.fromRGB(255, 255, 255)
+toggleBtn.AutoButtonColor = false
+toggleBtn.BorderSizePixel = 0
+toggleBtn.Parent = screenGui
+
+local corner = Instance.new("UICorner")
+corner.CornerRadius = UDim.new(1, 0)
+corner.Parent = toggleBtn
+
+local stroke = Instance.new("UIStroke")
+stroke.Thickness = 2
+stroke.Color = Color3.fromRGB(255, 200, 255)
+stroke.Transparency = 0.4
+stroke.Parent = toggleBtn
+
+local dragging, dragInput, dragStart, startPos
+toggleBtn.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = true
+        dragStart = input.Position
+        startPos = toggleBtn.Position
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then
+                dragging = false
             end
-        end
-    end)
+        end)
+    end
+end)
 
-    UserInputService.JumpRequest:Connect(function()
-        local hum = localPlayer.Character and localPlayer.Character:FindFirstChildOfClass("Humanoid")
-        if hum and (_G.Settings.InfJump or _G.Settings.SuperJumpEnabled) then
-            if _G.Settings.SuperJumpEnabled then hum.JumpPower = _G.Settings.SuperJumpHeight end
-            hum:ChangeState(Enum.HumanoidStateType.Jumping)
-        end
-    end)
+toggleBtn.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+        dragInput = input
+    end
+end)
 
-    print("[NEKO BF] WindUI 對接完成！")
-    StarterGui:SetCore("SendNotification", {Title = "NEKO BF", Text = "腳本啟動成功！找螢幕上的開關按鈕喵～", Duration = 6})
-else
-    warn("[NEKO] WindUI HttpGet 失敗: " .. tostring(WindUIContent))
-    StarterGui:SetCore("SendNotification", {Title = "NEKO 錯誤", Text = "無法連線到 WindUI，請檢查網路或連結", Duration = 10})
-end
+RunService.RenderStepped:Connect(function()
+    if dragging and dragInput then
+        local delta = dragInput.Position - dragStart
+        toggleBtn.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+    end
+end)
+
+toggleBtn.MouseButton1Click:Connect(function()
+    window:Toggle()
+    toggleBtn.BackgroundTransparency = window.Visible and 0.3 or 0.6
+end)
+
+window:Toggle(true)
+
+StarterGui:SetCore("SendNotification", {Title = "NEKO BF", Text = "啟動成功！右下角粉紅 NEKO 按鈕可拖曳 + 點擊開/關 UI 喵～", Duration = 10})
