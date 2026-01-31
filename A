@@ -8,7 +8,7 @@ local localPlayer = game.Players.LocalPlayer
 
 if not Whitelist[localPlayer.Name] then
     game:GetService("StarterGui"):SetCore("SendNotification", {
-        Title = "NEKO BF",
+        Title = "貓腳本",
         Text = "你不在白名單內！腳本拒絕執行喵～",
         Duration = 10
     })
