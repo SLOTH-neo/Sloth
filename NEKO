@@ -143,11 +143,11 @@ if success then
 
         local TabEnv = myUI:Tab("👁️ 環境")
         local VisualSec = TabEnv:Section("視覺")
-        VisualSec:Textbox("FOV", "80", function(v)
+        VisualSec:Textbox("FOV", "120", function(v)
             local num = tonumber(v)
             if num then _G.Settings.FOV = math.clamp(num, 30, 160) end
         end)
-        VisualSec:Textbox("Zoom", "128", function(v)
+        VisualSec:Textbox("Zoom", "1000", function(v)
             local num = tonumber(v)
             if num then _G.Settings.MaxZoom = math.clamp(num, 1, 10000) end
         end)
@@ -171,7 +171,7 @@ if success then
             if num then _G.Settings.CatSpeedValue = num end
         end)
         M1:Toggle("無限跳躍", function(s) _G.Settings.InfJump = s end)
-        M1:Toggle("超級貓跳", function(s) _G.Settings.SuperJumpEnabled = s end)
+        M1:Toggle("超級貓跳", function(s) _G.Settings.SuperJumpEnabled = s s end)
         M1:Textbox("跳躍高度", "150", function(v)
             local num = tonumber(v)
             if num then _G.Settings.SuperJumpHeight = num end
@@ -181,10 +181,42 @@ if success then
         end)
 
         local TabTP = myUI:Tab("🌊 傳送")
-        local TP = TabTP:Section("跨海傳送")
-        TP:Button("🏝️ 一海", function() Sea("TravelMain") end)
-        TP:Button("🏰 二海", function() Sea("TravelDressrosa") end)
-        TP:Button("🐘 三海", function() Sea("TravelZou") end)
+        local SeaSec = TabTP:Section("跨海大傳送喵")
+        SeaSec:Button("🏝️ 前往：一海", function() Sea("TravelMain") end)
+        SeaSec:Button("🏰 前往：二海", function() Sea("TravelDressrosa") end)
+        SeaSec:Button("🐘 前往：三海", function() Sea("TravelZou") end)
+
+        local Sea2Loc = TabTP:Section("🏰 二海熱門點喵")
+        local sea2Locations = {
+            ["天鵝的房間"] = CFrame.new(-287.37, 305.81, 592.98),
+            ["豪宅"] = CFrame.new(2286.93, 15.06, 910.51),
+            ["鬼船裡"] = CFrame.new(-6501.06, 83.11, -123.52),
+            ["鬼船外"] = CFrame.new(922.78, 123.96, 32842.40)
+        }
+        for name, cf in pairs(sea2Locations) do
+            Sea2Loc:Button("🐾 " .. name, function()
+                local char = localPlayer.Character
+                if char and char:FindFirstChild("HumanoidRootPart") then
+                    char.HumanoidRootPart.CFrame = cf
+                end
+            end)
+        end
+
+        local Sea3Loc = TabTP:Section("🐘 三海熱門點喵")
+        local sea3Locations = {
+            ["海洋城堡"] = CFrame.new(-12463.60, 376.26, -7566.08),
+            ["海龜豪宅"] = CFrame.new(-5060.41, 316.43, -3192.30),
+            ["司法"] = CFrame.new(-5096.48, 316.43, -3177.91),
+            ["九頭蛇"] = CFrame.new(-5027.03, 316.43, -3206.07)
+        }
+        for name, cf in pairs(sea3Locations) do
+            Sea3Loc:Button("🐾 " .. name, function()
+                local char = localPlayer.Character
+                if char and char:FindFirstChild("HumanoidRootPart") then
+                    char.HumanoidRootPart.CFrame = cf
+                end
+            end)
+        end
 
         local TabFruit = myUI:Tab("🍎 果實")
         local FruitRadar = TabFruit:Section("果實雷達")
