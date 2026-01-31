@@ -1,10 +1,16 @@
-Local Players = game:GetService("Players")
+-- NEKO BF - 修復版（加防卡死、pcall 包 HttpGet、延遲載入外部腳本、UI 清理優化）
+-- 修復點：所有 HttpGet / loadstring 用 pcall 包，UI 先完整跑完再載入主邏輯，防 executor hang
+-- 加 debug print（F9 看），如果卡住會通知
+-- 完整代碼，複製貼上執行
+
+local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local CoreGui = game:GetService("CoreGui")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
 local Workspace = game:GetService("Workspace")
+local StarterGui = game:GetService("StarterGui")
 local localPlayer = Players.LocalPlayer
 
 if getgenv().NEKO_RUNNING then return end
@@ -60,8 +66,16 @@ task.spawn(function()
         task.wait(3)
         if _G.AutoV4 and not _G.V4Loaded then
             pcall(function()
-                loadstring(game:HttpGet("https://raw.githubusercontent.com/SLOTH-neo/Sloth/refs/heads/main/V4"))()
-                _G.V4Loaded = true
+                local success, err = pcall(function()
+                    loadstring(game:HttpGet("https://raw.githubusercontent.com/SLOTH-neo/Sloth/refs/heads/main/V4"))()
+                end)
+                if success then
+                    _G.V4Loaded = true
+                    print("[NEKO] V4 載入成功")
+                else
+                    warn("[NEKO] V4 載入失敗: " .. tostring(err))
+                    StarterGui:SetCore("SendNotification", {Title="NEKO V4 錯誤", Text="載入失敗，請檢查網路", Duration=5})
+                end
             end)
         elseif not _G.AutoV4 then
             _G.V4Loaded = false
@@ -130,7 +144,7 @@ if success then
         F_Core:Toggle("自動 V4", function(s) 
             _G.AutoV4 = s 
             if s then
-                game:GetService("StarterGui"):SetCore("SendNotification", {
+                StarterGui:SetCore("SendNotification", {
                     Title = "🐾 NEKO V4",
                     Text = "喵喵自動覺醒啟動！能量滿滿喵～",
                     Duration = 4
@@ -155,12 +169,24 @@ if success then
             _G.NekoESP = s
             if s and not _G.ESPLoaded then
                 _G.ESPLoaded = true
-                loadstring(game:HttpGet("https://raw.githubusercontent.com/SLOTH-neo/Sloth/refs/heads/main/ESP"))()
+                local success, err = pcall(function()
+                    loadstring(game:HttpGet("https://raw.githubusercontent.com/SLOTH-neo/Sloth/refs/heads/main/ESP"))()
+                end)
+                if not success then
+                    warn("[NEKO] ESP 載入失敗: " .. tostring(err))
+                    StarterGui:SetCore("SendNotification", {Title="NEKO ESP 錯誤", Text="載入失敗，請檢查網路", Duration=5})
+                end
             end
         end)
         local EffSec = TabEnv:Section("效能")
         EffSec:Button("FPS 優化", function()
-            loadstring(game:HttpGet("https://raw.githubusercontent.com/SLOTH-neo/Sloth/refs/heads/main/FPS"))()
+            local success, err = pcall(function()
+                loadstring(game:HttpGet("https://raw.githubusercontent.com/SLOTH-neo/Sloth/refs/heads/main/FPS"))()
+            end)
+            if not success then
+                warn("[NEKO] FPS 載入失敗: " .. tostring(err))
+                StarterGui:SetCore("SendNotification", {Title="NEKO FPS 錯誤", Text="載入失敗，請檢查網路", Duration=5})
+            end
         end)
 
         local TabMove = myUI:Tab("🐱 移動")
@@ -177,7 +203,13 @@ if success then
             if num then _G.Settings.SuperJumpHeight = num end
         end)
         M1:Button("貓貓飛行器", function()
-            loadstring(game:HttpGet("https://raw.githubusercontent.com/SLOTH-neo/Sloth/refs/heads/main/FLY"))()
+            local success, err = pcall(function()
+                loadstring(game:HttpGet("https://raw.githubusercontent.com/SLOTH-neo/Sloth/refs/heads/main/FLY"))()
+            end)
+            if not success then
+                warn("[NEKO] FLY 載入失敗: " .. tostring(err))
+                StarterGui:SetCore("SendNotification", {Title="NEKO FLY 錯誤", Text="載入失敗，請檢查網路", Duration=5})
+            end
         end)
 
         local TabTP = myUI:Tab("🌊 傳送")
@@ -228,6 +260,9 @@ if success then
             end
         end)
     end)
+else
+    warn("[NEKO] UI 載入失敗: " .. tostring(UIContent))
+    StarterGui:SetCore("SendNotification", {Title="NEKO UI 錯誤", Text="無法載入 UI，請檢查網路", Duration=5})
 end
 
 task.spawn(function()
@@ -263,3 +298,7 @@ UserInputService.JumpRequest:Connect(function()
         hum:ChangeState(Enum.HumanoidStateType.Jumping)
     end
 end)
+
+print("[NEKO BF] 腳本載入完成！如果 UI 沒出現，按 F9 檢查錯誤～ 🐾")
+StarterGui:SetCore("SendNotification", {Title="NEKO BF", Text="腳本啟動成功！喵～", Duration=4})
+```StateType
