@@ -54,7 +54,7 @@ function library.new(name)
 
     local Title = Instance.new("TextLabel", Side)
     Title.Size = UDim2.new(1, 0, 0, 50)
-    Title.Text = "🌸 " .. name:upper()
+    Title.Text = " " .. name:upper()
     Title.TextColor3 = C.Accent
     Title.Font = Enum.Font.GothamBlack
     Title.TextSize = 18
