@@ -1,251 +1,27 @@
 local Players = game:GetService("Players")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local CoreGui = game:GetService("CoreGui")
-local RunService = game:GetService("RunService")
-local UserInputService = game:GetService("UserInputService")
-local StarterGui = game:GetService("StarterGui")
-local Workspace = game:GetService("Workspace")
-local localPlayer = Players.LocalPlayer
+local LP = Players.LocalPlayer
 
-if getgenv().NEKO_RUNNING then return end
-getgenv().NEKO_RUNNING = true
-
-StarterGui:SetCore("SendNotification", {Title = "NEKO BF", Text = "腳本啟動中... 載入 Sloth UI 喵～", Duration = 6})
-
-_G.Settings = {
-    ClickDelay    = 0.2,
-    AtkRange      = 2500,
-    PullEnemies   = false,
-    Mode          = "None",
-    FOV           = 120,
-    MaxZoom       = 1000,
-    CatSpeedValue = 50,
-    SpeedEnabled  = false,
-    InfJump       = false,
-    SuperJumpEnabled = false,
-    SuperJumpHeight = 150,
-    StickyEnabled = false,
-    StickyTarget  = nil,
-    AutoBuyFruit  = false,
-    FruitESP      = false
+local Whitelist = {
+    ["Zn6xx"] = true,
+    ["jay04_23"] = true,
 }
 
-_G.NekoRunning = true
-_G.NekoAttack  = false
-_G.AutoV4      = false
-_G.NekoESP     = false
-_G.V4Loaded    = false
-_G.ESPLoaded   = false
-
-local Remote = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("CommF_")
-local function Sea(cmd) pcall(function() Remote:InvokeServer(cmd) end) end
-
-task.spawn(function()
-    local Camera = workspace.CurrentCamera
-    RunService.RenderStepped:Connect(function()
-        if not _G.NekoRunning then return end
-        pcall(function()
-            Camera.FieldOfView = _G.Settings.FOV
-            localPlayer.CameraMaxZoomDistance = _G.Settings.MaxZoom
-            localPlayer.CameraMinZoomDistance = 0
-            
-            local char = localPlayer.Character
-            if char and char:FindFirstChild("Humanoid") then
-                local hum = char.Humanoid
-                if _G.Settings.SpeedEnabled then hum.WalkSpeed = _G.Settings.CatSpeedValue end
-            end
-        end)
-    end)
-end)
-
-task.spawn(function()
-    while true do
-        task.wait(3)
-        if _G.AutoV4 and not _G.V4Loaded then
-            pcall(function()
-                loadstring(game:HttpGet("https://raw.githubusercontent.com/SLOTH-neo/Sloth/refs/heads/main/V4"))()
-                _G.V4Loaded = true
-            end)
-        elseif not _G.AutoV4 then
-            _G.V4Loaded = false
-        end
-    end
-end)
-
-local function NuclearClean()
-    local targets = {"Neko_PinkCyber_UI"}  -- 這個 library 用的 ScreenGui 名稱
-    for _, name in ipairs(targets) do
-        local obj = CoreGui:FindFirstChild(name)
-        if obj then pcall(function() obj:Destroy() end) end
-    end
+-- 檢查白名單
+if not Whitelist[LP.Name] then
+    LP:Kick("你不在白名單，無法使用此腳本")
+    return
 end
 
-NuclearClean()  -- 先清一次舊的
+-- 白名單通過，載入主腳本
+local success, code = pcall(function()
+    return game:HttpGet("https://raw.githubusercontent.com/SLOTH-neo/Sloth/refs/heads/main/NEKO")
+end)
 
-local library = loadstring(game:HttpGet("https://raw.githubusercontent.com/SLOTH-neo/Sloth/refs/heads/main/UI"))()
-
-local window = library.new("NEKO BF")  -- 建立視窗
-
--- 狀態 Tab (用 Button 顯示狀態，點擊無作用)
-local statusTab = window:Tab("🐾 貓咪狀態")
-local statusSec = statusTab:Section("喵喵狀態面板")
-
-local atkStatus = statusSec:Button("⚔️ 攻擊：🔴 休息中")
-local modeStatus = statusSec:Button("🧠 模式：休息中")
-local speedStatus = statusSec:Button("🐱 加速：關閉")
-local v4Status = statusSec:Button("✨ V4：關閉")
-local espStatus = statusSec:Button("👁️ 透視：關閉")
-local jumpStatus = statusSec:Button("🐾 跳躍：關閉")
-local fruitStatus = statusSec:Button("🍎 果實：關閉")
-
-task.spawn(function()
-    while task.wait(1.5) do
-        pcall(function()
-            atkStatus.Text = "⚔️ 攻擊：" .. (_G.NekoAttack and "🟢 狂砍中" or "🔴 休息中")
-            local modeText = (_G.Settings.Mode == "Mob" and "👹 自動打怪") or (_G.Settings.Mode == "All" and "💀 全殺模式") or "😴 休息中"
-            modeStatus.Text = "🧠 模式：" .. modeText
-            speedStatus.Text = "🐱 加速：" .. (_G.Settings.SpeedEnabled and "🟢 " .. _G.Settings.CatSpeedValue or "🔴 關閉")
-            v4Status.Text = "✨ V4：" .. (_G.AutoV4 and "🟢 覺醒中" or "🔴 關閉")
-            espStatus.Text = "👁️ 透視：" .. (_G.NekoESP and "🟢 全開" or "🔴 關閉")
-            local jumpActive = _G.Settings.InfJump or _G.Settings.SuperJumpEnabled
-            jumpStatus.Text = "🐾 跳躍：" .. (jumpActive and "🟢 啟動" or "🔴 關閉")
-            fruitStatus.Text = "🍎 果實：" .. (_G.Settings.FruitESP and "🟢 雷達" or "🔴 關閉")
-        end)
+if success and code and #code > 100 then
+    local func = loadstring(code)
+    if func then
+        func()
     end
-end)
-
--- 戰鬥 Tab
-local fightTab = window:Tab("⚔️ 戰鬥")
-local fightSec = fightTab:Section("核心收割")
-
-fightSec:Toggle("神刀連擊", function(s) _G.NekoAttack = s end)
-fightSec:Toggle("貓抓拉怪", function(s) _G.Settings.PullEnemies = s end)
-fightSec:Toggle("自動 V4", function(s) 
-    _G.AutoV4 = s 
-    if s then
-        StarterGui:SetCore("SendNotification", {Title = "NEKO V4", Text = "自動覺醒啟動！喵～", Duration = 4})
-    end
-end)
-fightSec:Button("👹 自動打怪", function() _G.Settings.Mode = "Mob"; _G.NekoAttack = true end)
-fightSec:Button("💀 全殺模式", function() _G.Settings.Mode = "All"; _G.NekoAttack = true end)
-fightSec:Button("🛑 停止戰鬥", function() _G.Settings.Mode = "None"; _G.NekoAttack = false end)
-
--- 環境 Tab
-local envTab = window:Tab("👁️ 環境")
-local visualSec = envTab:Section("視覺")
-visualSec:Textbox("FOV (30-160)", tostring(_G.Settings.FOV), function(v)
-    local num = tonumber(v)
-    if num then _G.Settings.FOV = math.clamp(num, 30, 160) end
-end)
-visualSec:Textbox("Zoom (1-10000)", tostring(_G.Settings.MaxZoom), function(v)
-    local num = tonumber(v)
-    if num then _G.Settings.MaxZoom = math.clamp(num, 1, 10000) end
-end)
-visualSec:Toggle("貓貓透視", function(s)
-    _G.NekoESP = s
-    if s and not _G.ESPLoaded then
-        _G.ESPLoaded = true
-        pcall(function()
-            loadstring(game:HttpGet("https://raw.githubusercontent.com/SLOTH-neo/Sloth/refs/heads/main/ESP"))()
-        end)
-    end
-end)
-
-local effSec = envTab:Section("效能")
-effSec:Button("FPS 優化", function()
-    pcall(function()
-        loadstring(game:HttpGet("https://raw.githubusercontent.com/SLOTH-neo/Sloth/refs/heads/main/FPS"))()
-    end)
-end)
-
--- 移動 Tab
-local moveTab = window:Tab("🐱 移動")
-local moveSec = moveTab:Section("貓咪移動")
-moveSec:Toggle("貓咪加速", function(s) _G.Settings.SpeedEnabled = s end)
-moveSec:Textbox("加速數值", tostring(_G.Settings.CatSpeedValue), function(v)
-    local num = tonumber(v)
-    if num then _G.Settings.CatSpeedValue = num end
-end)
-moveSec:Toggle("無限跳躍", function(s) _G.Settings.InfJump = s end)
-moveSec:Toggle("超級貓跳", function(s) _G.Settings.SuperJumpEnabled = s end)
-moveSec:Textbox("跳躍高度", tostring(_G.Settings.SuperJumpHeight), function(v)
-    local num = tonumber(v)
-    if num then _G.Settings.SuperJumpHeight = num end
-end)
-moveSec:Button("貓貓飛行器", function()
-    pcall(function()
-        loadstring(game:HttpGet("https://raw.githubusercontent.com/SLOTH-neo/Sloth/refs/heads/main/FLY"))()
-    end)
-end)
-
--- 傳送 Tab
-local tpTab = window:Tab("🌊 傳送")
-local tpSec = tpTab:Section("跨海傳送")
-tpSec:Button("🏝️ 一海", function() Sea("TravelMain") end)
-tpSec:Button("🏰 二海", function() Sea("TravelDressrosa") end)
-tpSec:Button("🐘 三海", function() Sea("TravelZou") end)
-
--- 果實 Tab
-local fruitTab = window:Tab("🍎 果實")
-local radarSec = fruitTab:Section("果實雷達")
-radarSec:Toggle("果實透視", function(s) _G.Settings.FruitESP = s end)
-radarSec:Button("🚀 立即撿果", function()
-    local hrp = localPlayer.Character and localPlayer.Character:FindFirstChild("HumanoidRootPart")
-    if not hrp then return end
-    for _, v in pairs(Workspace:GetChildren()) do
-        if v:IsA("Tool") and (v.Name:find("Fruit") or v:FindFirstChild("Handle")) then
-            hrp.CFrame = (v:FindFirstChild("Handle") or v.PrimaryPart).CFrame + Vector3.new(0, 2, 0)
-        end
-    end
-end)
-
-local drawSec = fruitTab:Section("抽獎")
-drawSec:Toggle("自動抽果", function(s) _G.Settings.AutoBuyFruit = s end)
-drawSec:Button("🎰 手動抽獎", function() Remote:InvokeServer("Cousin", "Buy") end)
-
--- 攻擊迴圈（原樣）
-task.spawn(function()
-    local RA = ReplicatedStorage.Modules.Net:WaitForChild("RE/RegisterAttack")
-    local RH = ReplicatedStorage.Modules.Net:WaitForChild("RE/RegisterHit")
-    while task.wait(0.05) do
-        if _G.NekoAttack then
-            pcall(function()
-                local ts = {}
-                local function find(f)
-                    for _, e in pairs(f:GetChildren()) do
-                        if #ts > 15 then break end
-                        if e:FindFirstChild("Humanoid") and e.Humanoid.Health > 0 then
-                            local p = e:FindFirstChild("HumanoidRootPart") or e.PrimaryPart
-                            if p and localPlayer:DistanceFromCharacter(p.Position) < _G.Settings.AtkRange then
-                                table.insert(ts, {e, p})
-                            end
-                        end
-                    end
-                end
-                if _G.Settings.Mode == "All" then find(workspace.Enemies); find(workspace.Characters)
-                elseif _G.Settings.Mode == "Mob" then find(workspace.Enemies) end
-                if #ts > 0 then RA:FireServer(_G.Settings.ClickDelay); RH:FireServer(ts[1][2], ts) end
-            end)
-        end
-    end
-end)
-
--- 跳躍處理
-UserInputService.JumpRequest:Connect(function()
-    local hum = localPlayer.Character and localPlayer.Character:FindFirstChildOfClass("Humanoid")
-    if hum and (_G.Settings.InfJump or _G.Settings.SuperJumpEnabled) then
-        if _G.Settings.SuperJumpEnabled then hum.JumpPower = _G.Settings.SuperJumpHeight end
-        hum:ChangeState(Enum.HumanoidStateType.Jumping)
-    end
-end)
-
--- 熱鍵 Toggle UI (Insert 鍵開關視窗)
-UserInputService.InputBegan:Connect(function(input, processed)
-    if processed then return end
-    if input.KeyCode == Enum.KeyCode.Insert then
-        window:Toggle()
-    end
-end)
-
-print("[NEKO BF] Sloth UI 載入完成！按 Insert 開/關 UI")
-StarterGui:SetCore("SendNotification", {Title = "NEKO BF", Text = "啟動成功！按 Insert 鍵開啟/關閉 UI 喵～", Duration = 8})
+else
+    LP:Kick("腳本載入失敗，請稍後再試")
+end
