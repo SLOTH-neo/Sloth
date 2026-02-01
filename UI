@@ -1,6 +1,7 @@
+--[[UI]]--
 local library = {}
 
-local services = setmetatable({}, {__index = function(_, k) return game:GetService(k) end})
+local services = setmetatable({}, { __index = function(_, k) return game:GetService(k) end })
 
 local ts = services.TweenService
 
@@ -84,7 +85,7 @@ function library.new(name)
         Main.Visible = not Main.Visible
     end
 
-    function window:Tab(name, iconId)
+    function window:Tab(name)
         local Page = Instance.new("ScrollingFrame", Pages)
         Page.Size = UDim2.new(1, 0, 1, 0)
         Page.ScrollBarThickness = 0
@@ -102,15 +103,12 @@ function library.new(name)
         Btn.Size = UDim2.new(1, 0, 0, 40)
         Btn.BackgroundColor3 = C.BtnBG
         Btn.BackgroundTransparency = 0.6
-        Btn.Text = ""
+        Btn.Text = name
+        Btn.TextColor3 = C.TextDim
+        Btn.Font = Enum.Font.GothamSemibold
+        Btn.TextSize = 14
+        Btn.TextXAlignment = Enum.TextXAlignment.Center
         Instance.new("UICorner", Btn).CornerRadius = UDim.new(0, 10)
-
-        local Icon = Instance.new("ImageLabel", Btn)
-        Icon.Size = UDim2.new(0, 32, 0, 32)
-        Icon.Position = UDim2.new(0.5, -16, 0.5, -16)
-        Icon.BackgroundTransparency = 1
-        Icon.Image = iconId or "rbxassetid://7733960981"
-        Icon.ImageColor3 = C.Accent
 
         local Indicator = Instance.new("Frame", Btn)
         Indicator.Size = UDim2.new(0, 4, 0, 0)
@@ -122,12 +120,12 @@ function library.new(name)
 
         Btn.MouseEnter:Connect(function()
             Tween(Btn, {0.2}, {BackgroundTransparency = 0.3})
-            Tween(Icon, {0.2}, {ImageColor3 = C.TextHi})
+            Tween(Btn, {0.2}, {TextColor3 = C.TextHi})
         end)
 
         Btn.MouseLeave:Connect(function()
             Tween(Btn, {0.2}, {BackgroundTransparency = 0.6})
-            Tween(Icon, {0.2}, {ImageColor3 = C.Accent})
+            Tween(Btn, {0.2}, {TextColor3 = C.TextDim})
         end)
 
         Btn.MouseButton1Click:Connect(function()
@@ -148,7 +146,7 @@ function library.new(name)
 
         local tab = {}
 
-        function tab:Section()
+        function tab:Section(txt)
             local Sec = Instance.new("Frame", Page)
             Sec.Size = UDim2.new(1, -20, 0, 0)
             Sec.BackgroundColor3 = C.Glass
@@ -161,16 +159,26 @@ function library.new(name)
             SecStroke.Transparency = 0.6
             SecStroke.Thickness = 1.2
 
+            local T = Instance.new("TextLabel", Sec)
+            T.Size = UDim2.new(1, -20, 0, 30)
+            T.Position = UDim2.new(0, 10, 0, 8)
+            T.Text = txt:upper()
+            T.TextColor3 = C.Accent
+            T.Font = Enum.Font.GothamBlack
+            T.TextSize = 13
+            T.TextXAlignment = Enum.TextXAlignment.Left
+            T.BackgroundTransparency = 1
+
             local Box = Instance.new("Frame", Sec)
             Box.Size = UDim2.new(1, -20, 0, 0)
-            Box.Position = UDim2.new(0, 10, 0, 10)
+            Box.Position = UDim2.new(0, 10, 0, 40)
             Box.BackgroundTransparency = 1
 
             local bl = Instance.new("UIListLayout", Box)
             bl.Padding = UDim.new(0, 10)
             bl.HorizontalAlignment = Enum.HorizontalAlignment.Center
             bl:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-                Sec.Size = UDim2.new(1, -20, 0, bl.AbsoluteContentSize.Y + 20)
+                Sec.Size = UDim2.new(1, -20, 0, bl.AbsoluteContentSize.Y + 50)
             end)
 
             local e = {}
@@ -194,11 +202,13 @@ function library.new(name)
                 b.MouseEnter:Connect(function()
                     Tween(b, {0.2}, {BackgroundTransparency = 0.2})
                     Tween(glow, {0.2}, {Transparency = 0.4})
+                    Tween(b, {0.2}, {Size = UDim2.new(1, 0, 0, 42)})
                 end)
 
                 b.MouseLeave:Connect(function()
                     Tween(b, {0.2}, {BackgroundTransparency = 0.4})
                     Tween(glow, {0.2}, {Transparency = 1})
+                    Tween(b, {0.2}, {Size = UDim2.new(1, 0, 0, 38)})
                 end)
 
                 b.MouseButton1Down:Connect(function()
@@ -206,7 +216,7 @@ function library.new(name)
                 end)
 
                 b.MouseButton1Up:Connect(function()
-                    Tween(b, {0.15, Enum.EasingStyle.Back}, {Size = UDim2.new(1, 0, 0, 38)})
+                    Tween(b, {0.15, Enum.EasingStyle.Back}, {Size = UDim2.new(1, 0, 0, 42)})
                     cb()
                 end)
 
