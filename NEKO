@@ -28,16 +28,7 @@ _G.Settings = {
     StickyTarget  = nil,
     AutoBuyFruit  = false,
     FruitESP      = false,
-    AimbotEnabled = false,
-
-    NoClip        = false,
-    AirWalk       = false,
-    Spin          = false,
-    SpinSpeed     = 30,
-    Fling         = false,
-    Invisible     = false,
-    FakeLag       = false,
-    FakeLagDelay  = 0.15,
+    AimbotEnabled = false
 }
 
 _G.NekoRunning = true
@@ -47,161 +38,28 @@ _G.NekoESP     = false
 _G.V4Loaded    = false
 _G.ESPLoaded   = false
 
-local connections = {}
-local parts = {}
-
 local Remote = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("CommF_")
 local function Sea(cmd) pcall(function() Remote:InvokeServer(cmd) end) end
 
+-- 渲染循環邏輯 (不動)
 task.spawn(function()
     local Camera = workspace.CurrentCamera
-    local lastFakeLag = tick()
-
     RunService.RenderStepped:Connect(function()
         if not _G.NekoRunning then return end
         pcall(function()
             Camera.FieldOfView = _G.Settings.FOV
             localPlayer.CameraMaxZoomDistance = _G.Settings.MaxZoom
             localPlayer.CameraMinZoomDistance = 0
-
             local char = localPlayer.Character
-            if not char or not char:FindFirstChild("Humanoid") then return end
-            local hum = char.Humanoid
-            local hrp = char:FindFirstChild("HumanoidRootPart")
-            if not hrp then return end
-
-            if _G.Settings.SpeedEnabled then
-                hum.WalkSpeed = _G.Settings.CatSpeedValue
-            end
-
-            if _G.Settings.NoClip then
-                for _, part in pairs(char:GetDescendants()) do
-                    if part:IsA("BasePart") then
-                        part.CanCollide = false
-                    end
-                end
-            end
-
-            if _G.Settings.AirWalk then
-                if not parts.AirWalkPart then
-                    local p = Instance.new("Part")
-                    p.Size = Vector3.new(20, 1, 20)
-                    p.Transparency = 1
-                    p.Anchored = true
-                    p.CanCollide = true
-                    p.Parent = Workspace
-                    parts.AirWalkPart = p
-                end
-                parts.AirWalkPart.CFrame = hrp.CFrame * CFrame.new(0, -3.05, 0)
-            elseif parts.AirWalkPart then
-                parts.AirWalkPart:Destroy()
-                parts.AirWalkPart = nil
-            end
-
-            if _G.Settings.FakeLag then
-                if tick() - lastFakeLag > _G.Settings.FakeLagDelay then
-                    hrp.Anchored = true
-                    task.wait(0.03)
-                    hrp.Anchored = false
-                    lastFakeLag = tick()
-                end
+            if char and char:FindFirstChild("Humanoid") then
+                local hum = char.Humanoid
+                if _G.Settings.SpeedEnabled then hum.WalkSpeed = _G.Settings.CatSpeedValue end
             end
         end)
     end)
 end)
 
-local spinAV
-local function updateSpin()
-    local char = localPlayer.Character
-    if not char or not char:FindFirstChild("HumanoidRootPart") then return end
-    local hrp = char.HumanoidRootPart
-
-    if _G.Settings.Spin then
-        if not spinAV then
-            spinAV = Instance.new("BodyAngularVelocity")
-            spinAV.MaxTorque = Vector3.new(0, math.huge, 0)
-            spinAV.AngularVelocity = Vector3.new(0, _G.Settings.SpinSpeed, 0)
-            spinAV.Parent = hrp
-        end
-        spinAV.AngularVelocity = Vector3.new(0, _G.Settings.SpinSpeed, 0)
-    else
-        if spinAV then spinAV:Destroy() spinAV = nil end
-    end
-end
-
-local flingCon
-local function updateFling()
-    if _G.Settings.Fling then
-        if flingCon then return end
-        flingCon = RunService.Heartbeat:Connect(function()
-            pcall(function()
-                local hrp = localPlayer.Character and localPlayer.Character:FindFirstChild("HumanoidRootPart")
-                if not hrp then return end
-
-                for _, p in pairs(Players:GetPlayers()) do
-                    if p ~= localPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
-                        local targetHRP = p.Character.HumanoidRootPart
-                        if (hrp.Position - targetHRP.Position).Magnitude < 15 then
-                            local oldVel = hrp.Velocity
-                            hrp.Velocity = Vector3.new(0, 1e5, 0)
-                            task.wait()
-                            hrp.Velocity = oldVel
-                            targetHRP.AssemblyAngularVelocity = Vector3.new(math.random(-1000,1000), math.random(-1000,1000), math.random(-1000,1000))
-                        end
-                    end
-                end
-            end)
-        end)
-    else
-        if flingCon then flingCon:Disconnect() flingCon = nil end
-    end
-end
-
-local invisCon, invisPart
-local function updateInvisible()
-    local char = localPlayer.Character
-    if not char then return end
-    local hrp = char:FindFirstChild("HumanoidRootPart")
-    if not hrp then return end
-
-    if _G.Settings.Invisible then
-        if not invisPart then
-            invisPart = Instance.new("Part")
-            invisPart.Size = Vector3.new(1,1,1)
-            invisPart.Transparency = 1
-            invisPart.Anchored = true
-            invisPart.CanCollide = false
-            invisPart.Parent = Workspace
-        end
-
-        if not invisCon then
-            invisCon = RunService.RenderStepped:Connect(function()
-                if invisPart then
-                    invisPart.CFrame = hrp.CFrame
-                end
-                workspace.CurrentCamera.CameraSubject = invisPart
-            end)
-        end
-
-        for _, part in pairs(char:GetDescendants()) do
-            if part:IsA("BasePart") or part:IsA("MeshPart") or part:IsA("Decal") then
-                part.Transparency = 1
-            end
-        end
-    else
-        if invisCon then invisCon:Disconnect() invisCon = nil end
-        if invisPart then invisPart:Destroy() invisPart = nil end
-        workspace.CurrentCamera.CameraSubject = char:FindFirstChildOfClass("Humanoid")
-        for _, part in pairs(char:GetDescendants()) do
-            if part:IsA("BasePart") or part:IsA("MeshPart") then
-                part.Transparency = 0
-            elseif part:IsA("Decal") then
-                part.Transparency = part:GetAttribute("OriginalTransparency") or 0
-            end
-        end
-    end
-end
-
+-- 自動 V4 加載邏輯 (不動)
 task.spawn(function()
     while true do
         task.wait(3)
@@ -223,12 +81,22 @@ local function NuclearClean()
         if obj then pcall(function() obj:Destroy() end) end
     end
 end
+
 NuclearClean()
 
 local library = loadstring(game:HttpGet("https://raw.githubusercontent.com/SLOTH-neo/Sloth/refs/heads/main/UI"))()
 local window = library.new("🐾 貓腳本 🐾")
 
--- 傳送地點表格（這兩個被刪掉了，現在加回來）
+-- 第一頁：替換為公告頁面
+local announceTab = window:Tab("📢 公告")
+local announceSec = announceTab:Section("貓腳本公告")
+
+announceSec:Label("NEKO BF - 貓腳本")
+announceSec:Label("版本：1.0")
+announceSec:Label("作者：貓貓")
+announceSec:Separator()
+
+-- 坐標數據 (不動)
 local sea2Locations = {
     ["天鵝的房間"] = CFrame.new(-287.37, 305.81, 592.98),
     ["豪宅"] = CFrame.new(2286.93, 15.06, 910.51),
@@ -247,9 +115,6 @@ local function TeleportTo(cf, name)
     local char = localPlayer.Character
     if char and char:FindFirstChild("HumanoidRootPart") then
         char.HumanoidRootPart.CFrame = cf
-        StarterGui:SetCore("SendNotification", {Title = "傳送", Text = "已傳送到 " .. name, Duration = 3})
-    else
-        StarterGui:SetCore("SendNotification", {Title = "傳送失敗", Text = "角色尚未載入", Duration = 3})
     end
 end
 
@@ -259,36 +124,7 @@ local function TravelSea(seaRemote)
     end)
 end
 
--- 第一頁：純公告
-local announceTab = window:Tab("📢 公告")
-local announceSec = announceTab:Section("重要公告與使用說明")
-
-announceSec:Label("NEKO BF - 貓腳本")
-announceSec:Label("版本：1.0")
-announceSec:Label("作者：貓貓")
-announceSec:Separator()
-
-announceSec:Label("主要功能一覽：")
-announceSec:Label("• 戰鬥：神刀連擊、自動打怪/全殺、拉怪")
-announceSec:Label("• 移動：加速、無限跳、超級跳、穿牆、空中走路、自轉、甩人、假隱身、假延遲")
-announceSec:Label("• 視覺：FOV/Zoom、自瞄、果實透視")
-announceSec:Label("• 傳送：跨海 + 常用地點")
-announceSec:Label("• 果實：自動抽果、快速撿果")
-announceSec:Separator()
-
-announceSec:Label("使用提醒與風險：")
-announceSec:Label("1. 甩人 / 假隱身 / 假lag 屬高風險功能，極易被偵測與封號")
-announceSec:Label("2. 建議在低調環境下使用，勿公開炫耀")
-announceSec:Label("3. 若腳本異常或遊戲卡頓 → 重新執行腳本或重進遊戲")
-announceSec:Label("4. 本腳本不提供任何保證，請自行承擔風險")
-announceSec:Separator()
-
-announceSec:Label("操作提示：")
-announceSec:Label("• 右下角貓咪圖示：展開/收合選單")
-announceSec:Label("• 大部分功能開啟後需角色重生才完全生效")
-announceSec:Label("• 祝遊戲愉快～喵喵～")
-
--- 戰鬥 Tab
+-- 戰鬥頁面
 local fightTab = window:Tab("⚔️ 戰鬥")
 local fightSec = fightTab:Section("核心收割")
 fightSec:Toggle("神刀連擊", function(s) _G.NekoAttack = s end)
@@ -303,7 +139,7 @@ fightSec:Button("👹 自動打怪", function() _G.Settings.Mode = "Mob"; _G.Nek
 fightSec:Button("💀 全殺模式", function() _G.Settings.Mode = "All"; _G.NekoAttack = true end)
 fightSec:Button("🛑 停止戰鬥", function() _G.Settings.Mode = "None"; _G.NekoAttack = false end)
 
--- 環境 Tab
+-- 環境頁面
 local envTab = window:Tab("👁️ 環境")
 local visualSec = envTab:Section("視覺")
 visualSec:Textbox("FOV (30-160)", tostring(_G.Settings.FOV), function(v)
@@ -323,9 +159,18 @@ visualSec:Toggle("貓貓透視", function(s)
         end)
     end
 end)
-visualSec:Toggle("自瞄 (鎖頭)", function(s) _G.Settings.AimbotEnabled = s end)
+visualSec:Toggle("自瞄 (鎖頭)", function(s)
+    _G.Settings.AimbotEnabled = s
+end)
 
--- 移動 Tab
+local effSec = envTab:Section("效能")
+effSec:Button("FPS 優化", function()
+    pcall(function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/SLOTH-neo/Sloth/refs/heads/main/FPS"))()
+    end)
+end)
+
+-- 移動頁面
 local moveTab = window:Tab("🐱 移動")
 local moveSec = moveTab:Section("貓咪移動")
 moveSec:Toggle("貓咪加速", function(s) _G.Settings.SpeedEnabled = s end)
@@ -339,23 +184,13 @@ moveSec:Textbox("跳躍高度", tostring(_G.Settings.SuperJumpHeight), function(
     local num = tonumber(v)
     if num then _G.Settings.SuperJumpHeight = num end
 end)
-
-moveSec:Toggle("穿牆 (NoClip)", function(s) _G.Settings.NoClip = s end)
-moveSec:Toggle("空中走路 (AirWalk)", function(s) _G.Settings.AirWalk = s end)
-moveSec:Toggle("自轉 (Spin)", function(s) _G.Settings.Spin = s updateSpin() end)
-moveSec:Textbox("自轉速度", tostring(_G.Settings.SpinSpeed), function(v)
-    local num = tonumber(v)
-    if num then _G.Settings.SpinSpeed = num end
-end)
-moveSec:Toggle("近身甩人 (Fling)", function(s) _G.Settings.Fling = s updateFling() end)
-moveSec:Toggle("假隱身 (Invisible)", function(s) _G.Settings.Invisible = s updateInvisible() end)
-moveSec:Toggle("假延遲 (Fake Lag)", function(s) _G.Settings.FakeLag = s end)
-moveSec:Textbox("假lag間隔 (秒)", tostring(_G.Settings.FakeLagDelay), function(v)
-    local num = tonumber(v)
-    if num then _G.Settings.FakeLagDelay = math.max(0.05, num) end
+moveSec:Button("貓貓飛行器", function()
+    pcall(function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/SLOTH-neo/Sloth/refs/heads/main/FLY"))()
+    end)
 end)
 
--- 傳送 Tab（現在不會報錯了）
+-- 傳送頁面
 local tpTab = window:Tab("🌊 傳送")
 local tpSec = tpTab:Section("跨海傳送")
 tpSec:Button("🏝️ 一海", function() TravelSea("TravelMain") end)
@@ -370,7 +205,7 @@ tpSec:Button("海龜豪宅", function() TeleportTo(sea3Locations["海龜豪宅"]
 tpSec:Button("司法", function() TeleportTo(sea3Locations["司法"], "司法") end)
 tpSec:Button("九頭蛇", function() TeleportTo(sea3Locations["九頭蛇"], "九頭蛇") end)
 
--- 果實 Tab
+-- 果實頁面
 local fruitTab = window:Tab("🍎 果實")
 local radarSec = fruitTab:Section("果實雷達")
 radarSec:Toggle("果實透視", function(s) _G.Settings.FruitESP = s end)
@@ -388,7 +223,7 @@ local drawSec = fruitTab:Section("抽獎")
 drawSec:Toggle("自動抽果", function(s) _G.Settings.AutoBuyFruit = s end)
 drawSec:Button("🎰 手動抽獎", function() Remote:InvokeServer("Cousin", "Buy") end)
 
--- 攻擊迴圈
+-- 核心戰鬥循環 (不動任何邏輯)
 task.spawn(function()
     local RA = ReplicatedStorage.Modules.Net:WaitForChild("RE/RegisterAttack")
     local RH = ReplicatedStorage.Modules.Net:WaitForChild("RE/RegisterHit")
@@ -415,6 +250,7 @@ task.spawn(function()
     end
 end)
 
+-- 跳躍監聽 (不動)
 UserInputService.JumpRequest:Connect(function()
     local hum = localPlayer.Character and localPlayer.Character:FindFirstChildOfClass("Humanoid")
     if hum and (_G.Settings.InfJump or _G.Settings.SuperJumpEnabled) then
@@ -423,6 +259,7 @@ UserInputService.JumpRequest:Connect(function()
     end
 end)
 
+-- 自瞄邏輯 (不動)
 local function getClosestPlayer()
     local closest, dist = nil, 1000
     for _, v in pairs(Players:GetPlayers()) do
@@ -452,17 +289,7 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
-local function onSettingChange()
-    updateSpin()
-    updateFling()
-    updateInvisible()
-end
-
-localPlayer.CharacterAdded:Connect(function()
-    task.wait(0.5)
-    onSettingChange()
-end)
-
+-- 手機端 UI 切換按鈕 (優化 Delta/Xeno 兼容性)
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "NekoToggleGui"
 screenGui.Parent = CoreGui
@@ -489,6 +316,7 @@ stroke.Color = Color3.fromRGB(255, 200, 255)
 stroke.Transparency = 0.4
 stroke.Parent = toggleBtn
 
+-- 拖動邏輯
 local dragging, dragInput, dragStart, startPos
 toggleBtn.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
@@ -523,4 +351,4 @@ end)
 
 window:Toggle(true)
 
-StarterGui:SetCore("SendNotification", {Title = "NEKO BF", Text = "啟動成功～所有按鈕已恢復", Duration = 10})
+StarterGui:SetCore("SendNotification", {Title = "NEKO BF", Text = "啟動成功～歡迎使用貓腳本", Duration = 10})
