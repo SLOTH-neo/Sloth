@@ -27,7 +27,8 @@ _G.Settings = {
     StickyEnabled = false,
     StickyTarget  = nil,
     AutoBuyFruit  = false,
-    FruitESP      = false
+    FruitESP      = false,
+    AimbotEnabled = false
 }
 
 _G.NekoRunning = true
@@ -171,6 +172,9 @@ visualSec:Toggle("貓貓透視", function(s)
         end)
     end
 end)
+visualSec:Toggle("自瞄 (鎖頭)", function(s)
+    _G.Settings.AimbotEnabled = s
+end)
 
 local effSec = envTab:Section("效能")
 effSec:Button("FPS 優化", function()
@@ -263,7 +267,35 @@ UserInputService.JumpRequest:Connect(function()
     end
 end)
 
--- 浮動收合按鈕（手機友好）
+local function getClosestPlayer()
+    local closest, dist = nil, 1000
+    for _, v in pairs(Players:GetPlayers()) do
+        if v ~= localPlayer and v.Character and v.Character:FindFirstChild("HumanoidRootPart") then
+            local hum = v.Character:FindFirstChildOfClass("Humanoid")
+            if hum and hum.Health > 0 then
+                local d = (localPlayer.Character.HumanoidRootPart.Position - v.Character.HumanoidRootPart.Position).Magnitude
+                if d < dist then
+                    dist = d
+                    closest = v.Character
+                end
+            end
+        end
+    end
+    return closest
+end
+
+RunService.RenderStepped:Connect(function()
+    if _G.Settings.AimbotEnabled then
+        pcall(function()
+            local target = getClosestPlayer()
+            if target and target:FindFirstChild("HumanoidRootPart") then
+                local cam = workspace.CurrentCamera
+                cam.CFrame = CFrame.new(cam.CFrame.Position, target.HumanoidRootPart.Position)
+            end
+        end)
+    end
+end)
+
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "NekoToggleGui"
 screenGui.Parent = CoreGui
