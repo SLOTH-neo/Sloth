@@ -228,7 +228,38 @@ NuclearClean()
 local library = loadstring(game:HttpGet("https://raw.githubusercontent.com/SLOTH-neo/Sloth/refs/heads/main/UI"))()
 local window = library.new("🐾 貓腳本 🐾")
 
--- 第一頁：純公告（靜態，無更新迴圈）
+-- 傳送地點表格（這兩個被刪掉了，現在加回來）
+local sea2Locations = {
+    ["天鵝的房間"] = CFrame.new(-287.37, 305.81, 592.98),
+    ["豪宅"] = CFrame.new(2286.93, 15.06, 910.51),
+    ["鬼船裡"] = CFrame.new(-6501.06, 83.11, -123.52),
+    ["鬼船外"] = CFrame.new(922.78, 123.96, 32842.40)
+}
+
+local sea3Locations = {
+    ["海洋城堡"] = CFrame.new(-12463.60, 376.26, -7566.08),
+    ["海龜豪宅"] = CFrame.new(-5060.41, 316.43, -3192.30),
+    ["司法"] = CFrame.new(-5096.48, 316.43, -3177.91),
+    ["九頭蛇"] = CFrame.new(-5027.03, 316.43, -3206.07)
+}
+
+local function TeleportTo(cf, name)
+    local char = localPlayer.Character
+    if char and char:FindFirstChild("HumanoidRootPart") then
+        char.HumanoidRootPart.CFrame = cf
+        StarterGui:SetCore("SendNotification", {Title = "傳送", Text = "已傳送到 " .. name, Duration = 3})
+    else
+        StarterGui:SetCore("SendNotification", {Title = "傳送失敗", Text = "角色尚未載入", Duration = 3})
+    end
+end
+
+local function TravelSea(seaRemote)
+    pcall(function()
+        ReplicatedStorage.Remotes.CommF_:InvokeServer(seaRemote)
+    end)
+end
+
+-- 第一頁：純公告
 local announceTab = window:Tab("📢 公告")
 local announceSec = announceTab:Section("重要公告與使用說明")
 
@@ -246,7 +277,7 @@ announceSec:Label("• 果實：自動抽果、快速撿果")
 announceSec:Separator()
 
 announceSec:Label("使用提醒與風險：")
-announceSec:Label("1. 甩人 / 假隱身 / 假lag 屬高風險功能，極易被遊戲偵測與封號")
+announceSec:Label("1. 甩人 / 假隱身 / 假lag 屬高風險功能，極易被偵測與封號")
 announceSec:Label("2. 建議在低調環境下使用，勿公開炫耀")
 announceSec:Label("3. 若腳本異常或遊戲卡頓 → 重新執行腳本或重進遊戲")
 announceSec:Label("4. 本腳本不提供任何保證，請自行承擔風險")
@@ -257,7 +288,7 @@ announceSec:Label("• 右下角貓咪圖示：展開/收合選單")
 announceSec:Label("• 大部分功能開啟後需角色重生才完全生效")
 announceSec:Label("• 祝遊戲愉快～喵喵～")
 
--- 其他 Tab
+-- 戰鬥 Tab
 local fightTab = window:Tab("⚔️ 戰鬥")
 local fightSec = fightTab:Section("核心收割")
 fightSec:Toggle("神刀連擊", function(s) _G.NekoAttack = s end)
@@ -272,6 +303,7 @@ fightSec:Button("👹 自動打怪", function() _G.Settings.Mode = "Mob"; _G.Nek
 fightSec:Button("💀 全殺模式", function() _G.Settings.Mode = "All"; _G.NekoAttack = true end)
 fightSec:Button("🛑 停止戰鬥", function() _G.Settings.Mode = "None"; _G.NekoAttack = false end)
 
+-- 環境 Tab
 local envTab = window:Tab("👁️ 環境")
 local visualSec = envTab:Section("視覺")
 visualSec:Textbox("FOV (30-160)", tostring(_G.Settings.FOV), function(v)
@@ -293,6 +325,7 @@ visualSec:Toggle("貓貓透視", function(s)
 end)
 visualSec:Toggle("自瞄 (鎖頭)", function(s) _G.Settings.AimbotEnabled = s end)
 
+-- 移動 Tab
 local moveTab = window:Tab("🐱 移動")
 local moveSec = moveTab:Section("貓咪移動")
 moveSec:Toggle("貓咪加速", function(s) _G.Settings.SpeedEnabled = s end)
@@ -322,6 +355,7 @@ moveSec:Textbox("假lag間隔 (秒)", tostring(_G.Settings.FakeLagDelay), functi
     if num then _G.Settings.FakeLagDelay = math.max(0.05, num) end
 end)
 
+-- 傳送 Tab（現在不會報錯了）
 local tpTab = window:Tab("🌊 傳送")
 local tpSec = tpTab:Section("跨海傳送")
 tpSec:Button("🏝️ 一海", function() TravelSea("TravelMain") end)
@@ -336,6 +370,7 @@ tpSec:Button("海龜豪宅", function() TeleportTo(sea3Locations["海龜豪宅"]
 tpSec:Button("司法", function() TeleportTo(sea3Locations["司法"], "司法") end)
 tpSec:Button("九頭蛇", function() TeleportTo(sea3Locations["九頭蛇"], "九頭蛇") end)
 
+-- 果實 Tab
 local fruitTab = window:Tab("🍎 果實")
 local radarSec = fruitTab:Section("果實雷達")
 radarSec:Toggle("果實透視", function(s) _G.Settings.FruitESP = s end)
@@ -353,6 +388,7 @@ local drawSec = fruitTab:Section("抽獎")
 drawSec:Toggle("自動抽果", function(s) _G.Settings.AutoBuyFruit = s end)
 drawSec:Button("🎰 手動抽獎", function() Remote:InvokeServer("Cousin", "Buy") end)
 
+-- 攻擊迴圈
 task.spawn(function()
     local RA = ReplicatedStorage.Modules.Net:WaitForChild("RE/RegisterAttack")
     local RH = ReplicatedStorage.Modules.Net:WaitForChild("RE/RegisterHit")
@@ -487,4 +523,4 @@ end)
 
 window:Toggle(true)
 
-StarterGui:SetCore("SendNotification", {Title = "NEKO BF", Text = "啟動成功～第一頁已改為純公告", Duration = 10})
+StarterGui:SetCore("SendNotification", {Title = "NEKO BF", Text = "啟動成功～所有按鈕已恢復", Duration = 10})
