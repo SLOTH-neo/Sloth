@@ -41,7 +41,6 @@ _G.ESPLoaded   = false
 local Remote = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("CommF_")
 local function Sea(cmd) pcall(function() Remote:InvokeServer(cmd) end) end
 
--- 渲染循環邏輯 (不動)
 task.spawn(function()
     local Camera = workspace.CurrentCamera
     RunService.RenderStepped:Connect(function()
@@ -59,7 +58,6 @@ task.spawn(function()
     end)
 end)
 
--- 自動 V4 加載邏輯 (不動)
 task.spawn(function()
     while true do
         task.wait(3)
@@ -87,16 +85,6 @@ NuclearClean()
 local library = loadstring(game:HttpGet("https://raw.githubusercontent.com/SLOTH-neo/Sloth/refs/heads/main/UI"))()
 local window = library.new("🐾 貓腳本 🐾")
 
--- 第一頁：替換為公告頁面
-local announceTab = window:Tab("📢 公告")
-local announceSec = announceTab:Section("貓腳本公告")
-
-announceSec:Label("NEKO BF - 貓腳本")
-announceSec:Label("版本：1.0")
-announceSec:Label("作者：貓貓")
-announceSec:Separator()
-
--- 坐標數據 (不動)
 local sea2Locations = {
     ["天鵝的房間"] = CFrame.new(-287.37, 305.81, 592.98),
     ["豪宅"] = CFrame.new(2286.93, 15.06, 910.51),
@@ -124,7 +112,33 @@ local function TravelSea(seaRemote)
     end)
 end
 
--- 戰鬥頁面
+local statusTab = window:Tab("🐾 貓咪狀態")
+local statusSec = statusTab:Section("喵喵狀態面板")
+
+local atkStatus = statusSec:Button("⚔️ 攻擊：🔴 休息中")
+local modeStatus = statusSec:Button("🧠 模式：休息中")
+local speedStatus = statusSec:Button("🐱 加速：關閉")
+local v4Status = statusSec:Button("✨ V4：關閉")
+local espStatus = statusSec:Button("👁️ 透視：關閉")
+local jumpStatus = statusSec:Button("🐾 跳躍：關閉")
+local fruitStatus = statusSec:Button("🍎 果實：關閉")
+
+task.spawn(function()
+    while task.wait(1.5) do
+        pcall(function()
+            atkStatus.Text = "⚔️ 攻擊：" .. (_G.NekoAttack and "🟢 狂砍中" or "🔴 休息中")
+            local modeText = (_G.Settings.Mode == "Mob" and "👹 自動打怪") or (_G.Settings.Mode == "All" and "💀 全殺模式") or "😴 休息中"
+            modeStatus.Text = "🧠 模式：" .. modeText
+            speedStatus.Text = "🐱 加速：" .. (_G.Settings.SpeedEnabled and "🟢 " .. _G.Settings.CatSpeedValue or "🔴 關閉")
+            v4Status.Text = "✨ V4：" .. (_G.AutoV4 and "🟢 覺醒中" or "🔴 關閉")
+            espStatus.Text = "👁️ 透視：" .. (_G.NekoESP and "🟢 全開" or "🔴 關閉")
+            local jumpActive = _G.Settings.InfJump or _G.Settings.SuperJumpEnabled
+            jumpStatus.Text = "🐾 跳躍：" .. (jumpActive and "🟢 啟動" or "🔴 關閉")
+            fruitStatus.Text = "🍎 果實：" .. (_G.Settings.FruitESP and "🟢 雷達" or "🔴 關閉")
+        end)
+    end
+end)
+
 local fightTab = window:Tab("⚔️ 戰鬥")
 local fightSec = fightTab:Section("核心收割")
 fightSec:Toggle("神刀連擊", function(s) _G.NekoAttack = s end)
@@ -139,7 +153,6 @@ fightSec:Button("👹 自動打怪", function() _G.Settings.Mode = "Mob"; _G.Nek
 fightSec:Button("💀 全殺模式", function() _G.Settings.Mode = "All"; _G.NekoAttack = true end)
 fightSec:Button("🛑 停止戰鬥", function() _G.Settings.Mode = "None"; _G.NekoAttack = false end)
 
--- 環境頁面
 local envTab = window:Tab("👁️ 環境")
 local visualSec = envTab:Section("視覺")
 visualSec:Textbox("FOV (30-160)", tostring(_G.Settings.FOV), function(v)
@@ -170,7 +183,6 @@ effSec:Button("FPS 優化", function()
     end)
 end)
 
--- 移動頁面
 local moveTab = window:Tab("🐱 移動")
 local moveSec = moveTab:Section("貓咪移動")
 moveSec:Toggle("貓咪加速", function(s) _G.Settings.SpeedEnabled = s end)
@@ -190,7 +202,6 @@ moveSec:Button("貓貓飛行器", function()
     end)
 end)
 
--- 傳送頁面
 local tpTab = window:Tab("🌊 傳送")
 local tpSec = tpTab:Section("跨海傳送")
 tpSec:Button("🏝️ 一海", function() TravelSea("TravelMain") end)
@@ -205,7 +216,6 @@ tpSec:Button("海龜豪宅", function() TeleportTo(sea3Locations["海龜豪宅"]
 tpSec:Button("司法", function() TeleportTo(sea3Locations["司法"], "司法") end)
 tpSec:Button("九頭蛇", function() TeleportTo(sea3Locations["九頭蛇"], "九頭蛇") end)
 
--- 果實頁面
 local fruitTab = window:Tab("🍎 果實")
 local radarSec = fruitTab:Section("果實雷達")
 radarSec:Toggle("果實透視", function(s) _G.Settings.FruitESP = s end)
@@ -223,7 +233,6 @@ local drawSec = fruitTab:Section("抽獎")
 drawSec:Toggle("自動抽果", function(s) _G.Settings.AutoBuyFruit = s end)
 drawSec:Button("🎰 手動抽獎", function() Remote:InvokeServer("Cousin", "Buy") end)
 
--- 核心戰鬥循環 (不動任何邏輯)
 task.spawn(function()
     local RA = ReplicatedStorage.Modules.Net:WaitForChild("RE/RegisterAttack")
     local RH = ReplicatedStorage.Modules.Net:WaitForChild("RE/RegisterHit")
@@ -250,7 +259,6 @@ task.spawn(function()
     end
 end)
 
--- 跳躍監聽 (不動)
 UserInputService.JumpRequest:Connect(function()
     local hum = localPlayer.Character and localPlayer.Character:FindFirstChildOfClass("Humanoid")
     if hum and (_G.Settings.InfJump or _G.Settings.SuperJumpEnabled) then
@@ -259,7 +267,6 @@ UserInputService.JumpRequest:Connect(function()
     end
 end)
 
--- 自瞄邏輯 (不動)
 local function getClosestPlayer()
     local closest, dist = nil, 1000
     for _, v in pairs(Players:GetPlayers()) do
@@ -289,7 +296,6 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
--- 手機端 UI 切換按鈕 (優化 Delta/Xeno 兼容性)
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "NekoToggleGui"
 screenGui.Parent = CoreGui
@@ -316,7 +322,6 @@ stroke.Color = Color3.fromRGB(255, 200, 255)
 stroke.Transparency = 0.4
 stroke.Parent = toggleBtn
 
--- 拖動邏輯
 local dragging, dragInput, dragStart, startPos
 toggleBtn.InputBegan:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
