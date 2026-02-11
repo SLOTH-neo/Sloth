@@ -29,7 +29,7 @@ end
 
 -- 白名單通過，載入主腳本
 local success, code = pcall(function()
-    return game:HttpGet("https://raw.githubusercontent.com/SLOTH-neo/Sloth/refs/heads/main/NEKO")
+    return game:HttpGet("https://github.com/SLOTH-neo/Sloth/blob/main/AKA")
 end)
 
 if success and code and #code > 100 then
