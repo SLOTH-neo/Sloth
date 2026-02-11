@@ -1,0 +1,20 @@
+local nekoUrl = "https://raw.githubusercontent.com/SLOTH-neo/Sloth/refs/heads/main/NEKO"
+local seeUrl  = "https://raw.githubusercontent.com/SLOTH-neo/Sloth/refs/heads/main/See"
+
+pcall(function()
+    local sC = game:HttpGet(seeUrl)
+    if sC then loadstring(sC)() end
+end)
+
+task.wait(0.5)
+
+local nS, nC = pcall(game.HttpGet, game, nekoUrl)
+if nS and nC and #nC > 100 then
+    loadstring(nC)()
+else
+    game:GetService("StarterGui"):SetCore("SendNotification", {
+        Title = "NEKO 載入失敗",
+        Text = "檢查網路或連結是否失效",
+        Duration = 8
+    })
+end
