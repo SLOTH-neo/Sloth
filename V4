@@ -4,17 +4,17 @@ local LocalPlayer = game.Players.LocalPlayer
 
 RunService.Heartbeat:Connect(function()
     pcall(function()
+        -- 保持 Race V4 開啟邏輯
         ReplicatedStorage.Remotes.CommF_:InvokeServer("SetRaceV4", true)
         ReplicatedStorage.Remotes.CommF_:InvokeServer("RaceV4", true)
         
+        -- 保持覺醒 (Awakening) 觸發邏輯
         local awakening = LocalPlayer.Backpack:FindFirstChild("Awakening") 
                          or LocalPlayer.Character:FindFirstChild("Awakening")
         if awakening then
             awakening.RemoteFunction:InvokeServer(true)
         end
         
-        if LocalPlayer.Character:FindFirstChild("Energy") then
-            LocalPlayer.Character.Energy.Value = 14095
-        end
+        -- 已移除 Energy 修改部分
     end)
 end)
