@@ -3,6 +3,7 @@ local LP = Players.LocalPlayer
 
 local Whitelist = {
     ["Zn6xx"] = true,
+    ["030501aaaaaaaaaa"] = true,
     ["mknhghv"] = true,
     ["robloxasdft114"] = true,
     ["iandsere"] = true,
