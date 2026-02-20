@@ -1,9 +1,15 @@
 --[[UI]]--
 local library = {}
 
-local services = setmetatable({}, { __index = function(_, k) return game:GetService(k) end })
+if not game:IsLoaded() then
+    game.Loaded:Wait()
+end
 
+local services = setmetatable({}, { __index = function(_, k) return game:GetService(k) end })
 local ts = services.TweenService
+local players = services.Players
+local lplr = players.LocalPlayer or players:GetPropertyChangedSignal("LocalPlayer"):Wait()
+local playerGui = lplr:WaitForChild("PlayerGui")
 
 local function Tween(obj, info, prop)
     local t = ts:Create(obj, TweenInfo.new(unpack(info)), prop)
@@ -26,10 +32,19 @@ local C = {
 }
 
 function library.new(name)
-    local sg = Instance.new("ScreenGui", services.CoreGui)
+
+    local old = playerGui:FindFirstChild("Neko_PinkCyber_UI")
+    if old then
+        old:Destroy()
+    end
+
+    local sg = Instance.new("ScreenGui")
     sg.Name = "Neko_PinkCyber_UI"
     sg.ResetOnSpawn = false
+    sg.IgnoreGuiInset = true
+    sg.DisplayOrder = 999999
     sg.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+    sg.Parent = playerGui
 
     local Main = Instance.new("Frame", sg)
     Main.Size = UDim2.new(0, 480, 0, 340)
@@ -217,7 +232,7 @@ function library.new(name)
 
                 b.MouseButton1Up:Connect(function()
                     Tween(b, {0.15, Enum.EasingStyle.Back}, {Size = UDim2.new(1, 0, 0, 42)})
-                    cb()
+                    if cb then cb() end
                 end)
 
                 return b
@@ -251,8 +266,10 @@ function library.new(name)
                 b.MouseButton1Click:Connect(function()
                     s = not s
                     Tween(d, {0.25, Enum.EasingStyle.Quint}, {BackgroundColor3 = s and C.Accent or C.DotOff})
-                    Tween(dot, {0.25, Enum.EasingStyle.Quint}, {Position = s and UDim2.new(0, 16, 0.5, -7) or UDim2.new(0, 2, 0.5, -7)})
-                    cb(s)
+                    Tween(dot, {0.25, Enum.EasingStyle.Quint}, {
+                        Position = s and UDim2.new(0, 16, 0.5, -7) or UDim2.new(0, 2, 0.5, -7)
+                    })
+                    if cb then cb(s) end
                 end)
 
                 return b
@@ -282,7 +299,7 @@ function library.new(name)
 
                 b.FocusLost:Connect(function()
                     Tween(stroke, {0.2}, {Transparency = 0.8})
-                    cb(b.Text)
+                    if cb then cb(b.Text) end
                 end)
 
                 return b
@@ -296,8 +313,10 @@ function library.new(name)
 
     function window:AddDrag(obj)
         local dragging, dragStart, startPos
+
         obj.InputBegan:Connect(function(input)
-            if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            if input.UserInputType == Enum.UserInputType.MouseButton1
+            or input.UserInputType == Enum.UserInputType.Touch then
                 dragging = true
                 dragStart = input.Position
                 startPos = obj.Position
@@ -305,14 +324,25 @@ function library.new(name)
         end)
 
         services.UserInputService.InputChanged:Connect(function(input)
-            if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+            if dragging and (
+                input.UserInputType == Enum.UserInputType.MouseMovement
+                or input.UserInputType == Enum.UserInputType.Touch
+            ) then
                 local delta = input.Position - dragStart
-                obj.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+                obj.Position = UDim2.new(
+                    startPos.X.Scale,
+                    startPos.X.Offset + delta.X,
+                    startPos.Y.Scale,
+                    startPos.Y.Offset + delta.Y
+                )
             end
         end)
 
-        services.UserInputService.InputEnded:Connect(function()
-            dragging = false
+        services.UserInputService.InputEnded:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1
+            or input.UserInputType == Enum.UserInputType.Touch then
+                dragging = false
+            end
         end)
     end
 
