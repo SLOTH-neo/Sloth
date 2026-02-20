@@ -1,27 +1,23 @@
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local CoreGui = game:GetService("CoreGui")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 local StarterGui = game:GetService("StarterGui")
 local Workspace = game:GetService("Workspace")
-
 local localPlayer = Players.LocalPlayer
-
-if getgenv().NEKO_RUNNING then return end
-getgenv().NEKO_RUNNING = true
 
 if not game:IsLoaded() then
     game.Loaded:Wait()
 end
 
-StarterGui:SetCore("SendNotification", {
-    Title = "NEKO BF",
-    Text = "腳本啟動中...",
-    Duration = 6
-})
+if getgenv().NEKO_RUNNING then return end
+getgenv().NEKO_RUNNING = true
+
+StarterGui:SetCore("SendNotification", {Title = "NEKO BF", Text = "腳本啟動中...", Duration = 6})
 
 _G.Settings = {
-    ClickDelay    = 0.01,
+    ClickDelay    = 0.013,
     AtkRange      = 5000,
     PullEnemies   = false,
     Mode          = "None",
@@ -46,14 +42,25 @@ _G.NekoESP     = false
 _G.V4Loaded    = false
 _G.ESPLoaded   = false
 
-local Remote = ReplicatedStorage:WaitForChild("Remotes"):WaitForChild("CommF_")
+-- 安全抓 Remote（避免其他遊戲卡死）
+local Remote = nil
+pcall(function()
+    local rFolder = ReplicatedStorage:FindFirstChild("Remotes")
+    if rFolder then
+        Remote = rFolder:FindFirstChild("CommF_")
+    end
+end)
+
 local function Sea(cmd)
-    pcall(function()
-        Remote:InvokeServer(cmd)
-    end)
+    if Remote then
+        pcall(function() Remote:InvokeServer(cmd) end)
+    end
 end
 
--- 相機與移動控制
+local function TravelSea(cmd)
+    Sea(cmd)
+end
+
 task.spawn(function()
     local Camera = workspace.CurrentCamera
     RunService.RenderStepped:Connect(function()
@@ -62,19 +69,15 @@ task.spawn(function()
             Camera.FieldOfView = _G.Settings.FOV
             localPlayer.CameraMaxZoomDistance = _G.Settings.MaxZoom
             localPlayer.CameraMinZoomDistance = 0
-
             local char = localPlayer.Character
             if char and char:FindFirstChild("Humanoid") then
                 local hum = char.Humanoid
-                if _G.Settings.SpeedEnabled then
-                    hum.WalkSpeed = _G.Settings.CatSpeedValue
-                end
+                if _G.Settings.SpeedEnabled then hum.WalkSpeed = _G.Settings.CatSpeedValue end
             end
         end)
     end)
 end)
 
--- 自動 V4
 task.spawn(function()
     while true do
         task.wait(3)
@@ -89,60 +92,52 @@ task.spawn(function()
     end
 end)
 
--- 載入 UI
+local function NuclearClean()
+    local targets = {"Neko_PinkCyber_UI"}
+    for _, name in ipairs(targets) do
+        local obj = CoreGui:FindFirstChild(name)
+        if obj then pcall(function() obj:Destroy() end) end
+    end
+end
+
+NuclearClean()
+
 local library = loadstring(game:HttpGet("https://raw.githubusercontent.com/SLOTH-neo/Sloth/refs/heads/main/UI"))()
-local window, mainGui = library.new("🐾 貓腳本 🐾")
+local window = library.new("🐾 貓腳本 🐾")
 
 -- 公告
-local announceTab = window:Tab("📢 公告")
-local announceSec = announceTab:Section(" 貓腳本公告 ")
-announceSec:Button(" NEKO - 貓腳本 ", function() end)
-announceSec:Button(" 有什麼要加的DC跟我說 ", function() end)
-announceSec:Button(" 作者：貓貓 ", function() end)
-announceSec:Button(" Delta / Xeno 都可開啟 ", function() end)
+local announceTab = window:Tab("📢 貓公告")
+local announceSec = announceTab:Section("貓腳本公告")
+announceSec:Button("NEKO BF - 貓腳本", function() end)
+announceSec:Button("有什麼要加的DC跟我說", function() end)
+announceSec:Button("作者：貓貓", function() end)
+announceSec:Button("Delta / Xeno 都可開啟", function() end)
 
 -- 戰鬥
 local fightTab = window:Tab("⚔️ 戰鬥")
 local fightSec = fightTab:Section("核心收割")
 fightSec:Toggle("神刀連擊", function(s) _G.NekoAttack = s end)
 fightSec:Toggle("貓抓拉怪", function(s) _G.Settings.PullEnemies = s end)
-fightSec:Toggle("自動 V4", function(s)
-    _G.AutoV4 = s
+fightSec:Toggle("自動 V4", function(s) 
+    _G.AutoV4 = s 
     if s then
-        StarterGui:SetCore("SendNotification", {
-            Title = "NEKO V4",
-            Text = "自動覺醒啟動！喵～",
-            Duration = 4
-        })
+        StarterGui:SetCore("SendNotification", {Title = "NEKO V4", Text = "自動覺醒啟動！喵～", Duration = 4})
     end
 end)
-fightSec:Button("👹 自動打怪", function()
-    _G.Settings.Mode = "Mob"
-    _G.NekoAttack = true
-end)
-fightSec:Button("💀 全殺模式", function()
-    _G.Settings.Mode = "All"
-    _G.NekoAttack = true
-end)
-fightSec:Button("🛑 停止戰鬥", function()
-    _G.Settings.Mode = "None"
-    _G.NekoAttack = false
-end)
+fightSec:Button("👹 自動打怪", function() _G.Settings.Mode = "Mob"; _G.NekoAttack = true end)
+fightSec:Button("💀 全殺模式", function() _G.Settings.Mode = "All"; _G.NekoAttack = true end)
+fightSec:Button("🛑 停止戰鬥", function() _G.Settings.Mode = "None"; _G.NekoAttack = false end)
 
 -- 環境
 local envTab = window:Tab("👁️ 環境")
 local visualSec = envTab:Section("視覺")
 visualSec:Textbox("FOV (30-160)", tostring(_G.Settings.FOV), function(v)
     local num = tonumber(v)
-    if num then
-        _G.Settings.FOV = math.clamp(num, 30, 160)
-    end
+    if num then _G.Settings.FOV = math.clamp(num, 30, 160) end
 end)
 visualSec:Textbox("Zoom (1-10000)", tostring(_G.Settings.MaxZoom), function(v)
     local num = tonumber(v)
-    if num then
-        _G.Settings.MaxZoom = math.clamp(num, 1, 10000)
-    end
+    if num then _G.Settings.MaxZoom = math.clamp(num, 1, 10000) end
 end)
 visualSec:Toggle("貓貓透視", function(s)
     _G.NekoESP = s
@@ -170,17 +165,13 @@ local moveSec = moveTab:Section("貓咪移動")
 moveSec:Toggle("貓咪加速", function(s) _G.Settings.SpeedEnabled = s end)
 moveSec:Textbox("加速數值", tostring(_G.Settings.CatSpeedValue), function(v)
     local num = tonumber(v)
-    if num then
-        _G.Settings.CatSpeedValue = num
-    end
+    if num then _G.Settings.CatSpeedValue = num end
 end)
 moveSec:Toggle("無限跳躍", function(s) _G.Settings.InfJump = s end)
 moveSec:Toggle("超級貓跳", function(s) _G.Settings.SuperJumpEnabled = s end)
 moveSec:Textbox("跳躍高度", tostring(_G.Settings.SuperJumpHeight), function(v)
     local num = tonumber(v)
-    if num then
-        _G.Settings.SuperJumpHeight = num
-    end
+    if num then _G.Settings.SuperJumpHeight = num end
 end)
 moveSec:Button("貓貓飛行器", function()
     pcall(function()
@@ -191,9 +182,23 @@ end)
 -- 傳送
 local tpTab = window:Tab("🌊 傳送")
 local tpSec = tpTab:Section("跨海傳送")
-tpSec:Button("🏝️ 一海", function() Sea("TravelMain") end)
-tpSec:Button("🏰 二海", function() Sea("TravelDressrosa") end)
-tpSec:Button("🐘 三海", function() Sea("TravelZou") end)
+tpSec:Button("🏝️ 一海", function() TravelSea("TravelMain") end)
+tpSec:Button("🏰 二海", function() TravelSea("TravelDressrosa") end)
+tpSec:Button("🐘 三海", function() TravelSea("TravelZou") end)
+
+local sea2Locations = {
+    ["天鵝的房間"] = CFrame.new(-287.37, 305.81, 592.98),
+    ["豪宅"] = CFrame.new(2286.93, 15.06, 910.51),
+    ["鬼船裡"] = CFrame.new(-6501.06, 83.11, -123.52),
+    ["鬼船外"] = CFrame.new(922.78, 123.96, 32842.40)
+}
+
+local sea3Locations = {
+    ["海洋城堡"] = CFrame.new(-12463.60, 376.26, -7566.08),
+    ["海龜豪宅"] = CFrame.new(-5060.41, 316.43, -3192.30),
+    ["司法"] = CFrame.new(-5096.48, 316.43, -3177.91),
+    ["九頭蛇"] = CFrame.new(-5027.03, 316.43, -3206.07)
+}
 
 local function TeleportTo(cf)
     local char = localPlayer.Character
@@ -202,46 +207,72 @@ local function TeleportTo(cf)
     end
 end
 
-tpSec:Button("天鵝的房間", function()
-    TeleportTo(CFrame.new(-287.37, 305.81, 592.98))
+for name, cf in pairs(sea2Locations) do
+    tpSec:Button(name, function() TeleportTo(cf) end)
+end
+
+for name, cf in pairs(sea3Locations) do
+    tpSec:Button(name, function() TeleportTo(cf) end)
+end
+
+-- 果實
+local fruitTab = window:Tab("🍎 果實")
+local radarSec = fruitTab:Section("果實雷達")
+radarSec:Toggle("果實透視", function(s) _G.Settings.FruitESP = s end)
+radarSec:Button("🚀 立即撿果", function()
+    local hrp = localPlayer.Character and localPlayer.Character:FindFirstChild("HumanoidRootPart")
+    if not hrp then return end
+    for _, v in pairs(Workspace:GetChildren()) do
+        if v:IsA("Tool") and (v.Name:find("Fruit") or v:FindFirstChild("Handle")) then
+            hrp.CFrame = (v:FindFirstChild("Handle") or v.PrimaryPart).CFrame + Vector3.new(0, 2, 0)
+        end
+    end
 end)
 
-tpSec:Button("豪宅", function()
-    TeleportTo(CFrame.new(2286.93, 15.06, 910.51))
+local drawSec = fruitTab:Section("抽獎")
+drawSec:Toggle("自動抽果", function(s) _G.Settings.AutoBuyFruit = s end)
+drawSec:Button("🎰 手動抽獎", function()
+    if Remote then
+        Remote:InvokeServer("Cousin", "Buy")
+    end
 end)
 
--- 核心戰鬥循環
+-- 安全戰鬥循環
 task.spawn(function()
-    local RA = ReplicatedStorage.Modules.Net:WaitForChild("RE/RegisterAttack")
-    local RH = ReplicatedStorage.Modules.Net:WaitForChild("RE/RegisterHit")
+    local RA, RH
+    pcall(function()
+        local m = ReplicatedStorage:FindFirstChild("Modules")
+        if m and m:FindFirstChild("Net") then
+            RA = m.Net:FindFirstChild("RE/RegisterAttack")
+            RH = m.Net:FindFirstChild("RE/RegisterHit")
+        end
+    end)
 
     while task.wait(0.05) do
-        if _G.NekoAttack then
+        if _G.NekoAttack and RA and RH then
             pcall(function()
-                local targets = {}
-
-                local function scan(folder)
-                    for _, e in pairs(folder:GetChildren()) do
-                        if #targets > 15 then break end
+                local ts = {}
+                local function find(f)
+                    if not f then return end
+                    for _, e in pairs(f:GetChildren()) do
+                        if #ts > 15 then break end
                         if e:FindFirstChild("Humanoid") and e.Humanoid.Health > 0 then
                             local p = e:FindFirstChild("HumanoidRootPart") or e.PrimaryPart
                             if p and localPlayer:DistanceFromCharacter(p.Position) < _G.Settings.AtkRange then
-                                table.insert(targets, {e, p})
+                                table.insert(ts, {e, p})
                             end
                         end
                     end
                 end
-
                 if _G.Settings.Mode == "All" then
-                    scan(workspace.Enemies)
-                    scan(workspace.Characters)
+                    find(workspace:FindFirstChild("Enemies"))
+                    find(workspace:FindFirstChild("Characters"))
                 elseif _G.Settings.Mode == "Mob" then
-                    scan(workspace.Enemies)
+                    find(workspace:FindFirstChild("Enemies"))
                 end
-
-                if #targets > 0 then
+                if #ts > 0 then
                     RA:FireServer(_G.Settings.ClickDelay)
-                    RH:FireServer(targets[1][2], targets)
+                    RH:FireServer(ts[1][2], ts)
                 end
             end)
         end
@@ -251,20 +282,17 @@ end)
 UserInputService.JumpRequest:Connect(function()
     local hum = localPlayer.Character and localPlayer.Character:FindFirstChildOfClass("Humanoid")
     if hum and (_G.Settings.InfJump or _G.Settings.SuperJumpEnabled) then
-        if _G.Settings.SuperJumpEnabled then
-            hum.JumpPower = _G.Settings.SuperJumpHeight
-        end
+        if _G.Settings.SuperJumpEnabled then hum.JumpPower = _G.Settings.SuperJumpHeight end
         hum:ChangeState(Enum.HumanoidStateType.Jumping)
     end
 end)
 
--- Toggle 按鈕（改為 PlayerGui，不再使用 CoreGui）
+-- Toggle 改掛 PlayerGui（避免其他遊戲被清）
 local playerGui = localPlayer:WaitForChild("PlayerGui")
-
-local toggleGui = Instance.new("ScreenGui")
-toggleGui.Name = "NekoToggleGui"
-toggleGui.ResetOnSpawn = false
-toggleGui.Parent = playerGui
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "NekoToggleGui"
+screenGui.Parent = playerGui
+screenGui.ResetOnSpawn = false
 
 local toggleBtn = Instance.new("ImageButton")
 toggleBtn.Size = UDim2.new(0, 60, 0, 60)
@@ -272,56 +300,15 @@ toggleBtn.Position = UDim2.new(1, -80, 1, -80)
 toggleBtn.BackgroundColor3 = Color3.fromRGB(255, 105, 180)
 toggleBtn.BackgroundTransparency = 0.3
 toggleBtn.Image = "rbxassetid://7733960981"
-toggleBtn.ImageColor3 = Color3.fromRGB(255, 255, 255)
-toggleBtn.AutoButtonColor = false
 toggleBtn.BorderSizePixel = 0
-toggleBtn.Parent = toggleGui
+toggleBtn.Parent = screenGui
 
-local corner = Instance.new("UICorner")
-corner.CornerRadius = UDim.new(1, 0)
-corner.Parent = toggleBtn
-
-local dragging, dragInput, dragStart, startPos
-
-toggleBtn.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1
-    or input.UserInputType == Enum.UserInputType.Touch then
-        dragging = true
-        dragStart = input.Position
-        startPos = toggleBtn.Position
-        input.Changed:Connect(function()
-            if input.UserInputState == Enum.UserInputState.End then
-                dragging = false
-            end
-        end)
-    end
-end)
-
-toggleBtn.InputChanged:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseMovement
-    or input.UserInputType == Enum.UserInputType.Touch then
-        dragInput = input
-    end
-end)
-
-RunService.RenderStepped:Connect(function()
-    if dragging and dragInput then
-        local delta = dragInput.Position - dragStart
-        toggleBtn.Position = UDim2.new(
-            startPos.X.Scale,
-            startPos.X.Offset + delta.X,
-            startPos.Y.Scale,
-            startPos.Y.Offset + delta.Y
-        )
-    end
-end)
+Instance.new("UICorner", toggleBtn).CornerRadius = UDim.new(1, 0)
 
 toggleBtn.MouseButton1Click:Connect(function()
     window:Toggle()
 end)
 
-StarterGui:SetCore("SendNotification", {
-    Title = "NEKO BF",
-    Text = "啟動成功～歡迎使用貓腳本",
-    Duration = 10
-})
+window:Toggle(true)
+
+StarterGui:SetCore("SendNotification", {Title = "NEKO BF", Text = "啟動成功～歡迎使用貓腳本", Duration = 10})
