@@ -299,7 +299,7 @@ toggleBtn.Size = UDim2.new(0, 60, 0, 60)
 toggleBtn.Position = UDim2.new(1, -80, 1, -80)
 toggleBtn.BackgroundColor3 = Color3.fromRGB(255, 105, 180)
 toggleBtn.BackgroundTransparency = 0.3
-toggleBtn.Image = "rbxassetid://7733960981"
+toggleBtn.Image = "rbxassetid://111390116086861"
 toggleBtn.BorderSizePixel = 0
 toggleBtn.Parent = screenGui
 
