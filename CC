@@ -17,7 +17,7 @@ getgenv().NEKO_RUNNING = true
 StarterGui:SetCore("SendNotification", {Title = "NEKO BF", Text = "腳本啟動中...", Duration = 6})
 
 _G.Settings = {
-    ClickDelay    = 0.013,
+    ClickDelay    = 0.01,
     AtkRange      = 5000,
     PullEnemies   = false,
     Mode          = "None",
