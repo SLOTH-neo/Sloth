@@ -38,7 +38,7 @@ StarterGui:SetCore("SendNotification", {Title = "NEKO BF", Text = "腳本啟動�
 
 _G.Settings = {
     ClickDelay    = 0.01,
-    AtkRange      = 1500,
+    AtkRange      = 3000,
     PullEnemies   = false,
     Mode          = "None",
     FOV           = 120,
