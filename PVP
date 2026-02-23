@@ -39,28 +39,9 @@ local function GetRandomValidPart(target)
     return #validParts > 0 and validParts[math.random(1, #validParts)] or target:FindFirstChild("HumanoidRootPart")
 end
 
-task.spawn(function()
-    while true do
-        if _G.NekoRunning and _G.Settings then
-            pcall(function()
-                Camera.FieldOfView = _G.Settings.FOV or 70
-                Player.CameraMaxZoomDistance = _G.Settings.ZoomDist or 128
-            end)
-        end
-        task.wait(0.5)
-    end
-end)
-
-RunService.Heartbeat:Connect(function()
-    if not _G.NekoRunning or not _G.Settings or not _G.Settings.SpeedEnabled then return end
-    local char = Player.Character
-    if char and char:FindFirstChild("Humanoid") then
-        local hum = char.Humanoid
-        if hum.MoveDirection.Magnitude > 0 then
-            char:TranslateBy(hum.MoveDirection * ((_G.Settings.CatSpeedValue or 50) / 10))
-        end
-    end
-end)
+-- 移除FOV/Zoom無限迴圈 ✅
+-- 移除Speed無限迴圈 ✅
+-- 移除PullEnemies ✅
 
 local FastAttack = {
     Distance = 2000,
@@ -75,11 +56,6 @@ local function ProcessEnemies(OthersEnemies, Folder)
         if Enemy == Player.Character or not IsAlive(Enemy) then continue end
         local foundPart = GetRandomValidPart(Enemy)
         if foundPart and Player:DistanceFromCharacter(foundPart.Position) < (_G.Settings.Distance or FastAttack.Distance) then
-            if _G.Settings.PullEnemies then
-                local eRoot = Enemy:FindFirstChild("HumanoidRootPart")
-                local myRoot = Player.Character and Player.Character:FindFirstChild("HumanoidRootPart")
-                if eRoot and myRoot then eRoot.CFrame = myRoot.CFrame * CFrame.new(0, 0, -3) end
-            end
             table.insert(OthersEnemies, {Enemy, foundPart})
             BasePart = foundPart
         end
@@ -103,6 +79,7 @@ local function ProcessRealPlayers(OthersEnemies)
     return BasePart
 end
 
+-- ✅ 只留下打怪+打人的核心攻擊邏輯
 task.spawn(function()
     while true do
         local delay = (_G.Settings and _G.Settings.ClickDelay) or 0.1
