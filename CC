@@ -1,4 +1,3 @@
--- [[ 貓功能 - 完整保留 + 影子黏人分頁 ]]
 local oldPrint = print
 local oldWarn = warn
 getgenv().print = function(...)
@@ -34,7 +33,7 @@ local function isTalking()
     return false
 end
 
-StarterGui:SetCore("SendNotification", {Title = "NEKO BF", Text = "腳本啟動中...", Duration = 6})
+StarterGui:SetCore("SendNotification", {Title = "NEKO", Text = "腳本啟動中...", Duration = 6})
 
 _G.Settings = {
     ClickDelay    = 0.01,
@@ -48,7 +47,7 @@ _G.Settings = {
     InfJump       = false,
     SuperJumpEnabled = false,
     SuperJumpHeight = 150,
-    StickyMode    = "Stop", -- 黏人模式控制
+    StickyMode    = "Stop",
     StickyTarget  = nil,
     AutoBuyFruit  = false,
     FruitESP      = false,
@@ -74,7 +73,6 @@ end
 
 local function TravelSea(cmd) Sea(cmd) end
 
--- 📌 核心自瞄邏輯 (保留)
 RunService.RenderStepped:Connect(function()
     if _G.Settings.AimbotEnabled and _G.NekoRunning and not isTalking() then
         local target = nil
@@ -92,7 +90,6 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
--- 📌 貓抓拉怪邏輯 (保留)
 task.spawn(function()
     while true do
         task.wait(0.1)
@@ -117,7 +114,6 @@ task.spawn(function()
     end
 end)
 
--- 環境與速度控制 (保留)
 task.spawn(function()
     RunService.RenderStepped:Connect(function()
         if not _G.NekoRunning then return end
@@ -132,7 +128,6 @@ task.spawn(function()
     end)
 end)
 
--- V4 自動加載 (保留)
 task.spawn(function()
     while true do
         task.wait(3)
@@ -147,7 +142,6 @@ task.spawn(function()
     end
 end)
 
--- 📌 影子黏人核心引擎 (新增)
 RunService.Stepped:Connect(function()
     if _G.Settings.StickyMode ~= "Stop" and _G.Settings.StickyTarget then
         local target = Players:FindFirstChild(_G.Settings.StickyTarget)
@@ -178,18 +172,27 @@ NuclearClean()
 local library = loadstring(game:HttpGet("https://raw.githubusercontent.com/SLOTH-neo/Sloth/refs/heads/main/UI"))()
 local window = library.new("🐾 貓腳本 🐾")
 
--- 📢 貓公告
 local announceTab = window:Tab("📢 貓公告")
 local announceSec = announceTab:Section("貓腳本公告")
-announceSec:Button("NEKO BF - 貓腳本", function() end)
+announceSec:Button("貓貓 - 貓腳本", function() end)
 announceSec:Button("有什麼要加的DC跟我說", function() end)
 announceSec:Button("Delta / Xeno 都可開啟", function() end)
 
--- ⚔️ 戰鬥
 local fightTab = window:Tab("⚔️ 戰鬥")
 local fightSec = fightTab:Section("核心收割")
 fightSec:Toggle("神刀連擊", function(s) _G.NekoAttack = s end)
 fightSec:Toggle("貓抓拉怪", function(s) _G.Settings.PullEnemies = s end)
+
+-- 這裡加入你要求的範圍和攻速輸入框
+fightSec:Textbox("攻擊範圍", tostring(_G.Settings.AtkRange), function(v)
+    local num = tonumber(v)
+    if num then _G.Settings.AtkRange = num end
+end)
+fightSec:Textbox("攻擊速度 (秒)", tostring(_G.Settings.ClickDelay), function(v)
+    local num = tonumber(v)
+    if num then _G.Settings.ClickDelay = num end
+end)
+
 fightSec:Toggle("自動 V4", function(s) 
     _G.AutoV4 = s 
     if s then StarterGui:SetCore("SendNotification", {Title = "NEKO V4", Text = "自動覺醒啟動！喵～", Duration = 4}) end
@@ -198,7 +201,6 @@ fightSec:Button("👹 打怪模式", function() _G.Settings.Mode = "Mob"; _G.Nek
 fightSec:Button("💀 全殺模式", function() _G.Settings.Mode = "All"; _G.NekoAttack = true end)
 fightSec:Button("🛑 停止戰鬥", function() _G.Settings.Mode = "None"; _G.NekoAttack = false end)
 
--- 👁️ 環境
 local envTab = window:Tab("👁️ 環境")
 local visualSec = envTab:Section("視覺")
 visualSec:Textbox("FOV (30-120)", tostring(_G.Settings.FOV), function(v)
@@ -223,7 +225,6 @@ effSec:Button("FPS 優化", function()
     pcall(function() loadstring(game:HttpGet("https://raw.githubusercontent.com/SLOTH-neo/Sloth/refs/heads/main/FPS"))() end)
 end)
 
--- 🐱 移動
 local moveTab = window:Tab("🐱 移動")
 local moveSec = moveTab:Section("貓咪移動")
 moveSec:Toggle("貓咪加速", function(s) _G.Settings.SpeedEnabled = s end)
@@ -241,15 +242,27 @@ moveSec:Button("貓飛行", function()
     pcall(function() loadstring(game:HttpGet("https://raw.githubusercontent.com/SLOTH-neo/Sloth/refs/heads/main/FLY"))() end)
 end)
 
--- 👥 影子黏人 (新增分頁)
-local stickyTab = window:Tab("👥 影子黏人")
+local stickyTab = window:Tab("👥 黏人")
 local stickySec = stickyTab:Section("黏人控制")
-local targetBtn = stickySec:Button("🎯 目標：尚未選擇", function() end)
+local targetBtn = stickySec:Button("有可能被踢自己注意", function() end)
 stickySec:Button("🟢 慢速跟隨", function() _G.Settings.StickyMode = "Slow" end)
 stickySec:Button("🔴 強制鎖死", function() _G.Settings.StickyMode = "Force" end)
 stickySec:Button("⚪ 停止黏人", function() _G.Settings.StickyMode = "Stop" end)
+
 local listSec = stickyTab:Section("刷新名單")
 listSec:Button("🔄 刷新玩家列表", function()
+    pcall(function()
+        local container = listSec.Container
+        for _, v in pairs(container:GetChildren()) do
+            if v:IsA("Frame") and v.Name ~= "UIListLayout" then
+                local b = v:FindFirstChildOfClass("TextButton")
+                if b and not b.Text:find("刷新") then
+                    v:Destroy()
+                end
+            end
+        end
+    end)
+    task.wait(0.1)
     for _, p in pairs(Players:GetPlayers()) do
         if p ~= localPlayer then
             listSec:Button(p.DisplayName.." (@"..p.Name..")", function()
@@ -260,7 +273,6 @@ listSec:Button("🔄 刷新玩家列表", function()
     end
 end)
 
--- 🌊 傳送
 local tpTab = window:Tab("🌊 傳送")
 local tpSec = tpTab:Section("跨海傳送")
 tpSec:Button("🏝️ 一海", function() TravelSea("TravelMain") end)
@@ -287,22 +299,25 @@ end
 for name, cf in pairs(sea2Locations) do tpSec:Button(name, function() TeleportTo(cf) end) end
 for name, cf in pairs(sea3Locations) do tpSec:Button(name, function() TeleportTo(cf) end) end
 
--- 🍎 果實
 local fruitTab = window:Tab("🍎 果實")
 local drawSec = fruitTab:Section("抽獎")
 drawSec:Toggle("自動抽果", function(s) _G.Settings.AutoBuyFruit = s end)
 drawSec:Button("🎰 手動抽獎", function() if Remote then Remote:InvokeServer("Cousin", "Buy") end end)
 
--- 安全戰鬥循環 (保留)
 task.spawn(function()
     local RA, RH
-    pcall(function()
-        local m = ReplicatedStorage:FindFirstChild("Modules")
-        if m and m:FindFirstChild("Net") then
-            RA = m.Net:FindFirstChild("RE/RegisterAttack")
-            RH = m.Net:FindFirstChild("RE/RegisterHit")
-        end
-    end)
+    while true do
+        task.wait(1)
+        pcall(function()
+            local m = ReplicatedStorage:FindFirstChild("Modules")
+            if m and m:FindFirstChild("Net") then
+                RA = m.Net:FindFirstChild("RE/RegisterAttack")
+                RH = m.Net:FindFirstChild("RE/RegisterHit")
+            end
+        end)
+        if RA and RH then break end
+    end
+    
     while true do
         task.wait(_G.Settings.ClickDelay)
         if isTalking() then continue end
@@ -339,12 +354,43 @@ end)
 
 local sg = Instance.new("ScreenGui", localPlayer:WaitForChild("PlayerGui"))
 sg.Name = "NekoToggleGui"
+sg.ResetOnSpawn = false
 local toggleBtn = Instance.new("ImageButton", sg)
-toggleBtn.Size, toggleBtn.Position = UDim2.new(0, 60, 0, 60), UDim2.new(1, -80, 1, -80)
-toggleBtn.BackgroundColor3, toggleBtn.BackgroundTransparency = Color3.fromRGB(255, 105, 180), 0.3
+toggleBtn.Size = UDim2.new(0, 60, 0, 60)
+toggleBtn.Position = UDim2.new(1, -80, 0.5, 0)
+toggleBtn.BackgroundColor3 = Color3.fromRGB(255, 105, 180)
+toggleBtn.BackgroundTransparency = 0.3
 toggleBtn.Image = "rbxassetid://7733960981"
 Instance.new("UICorner", toggleBtn).CornerRadius = UDim.new(1, 0)
+
+local dragging, dragInput, dragStart, startPos
+local function update(input)
+    local delta = input.Position - dragStart
+    toggleBtn.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+end
+
+toggleBtn.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = true
+        dragStart = input.Position
+        startPos = toggleBtn.Position
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then dragging = false end
+        end)
+    end
+end)
+
+toggleBtn.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+        dragInput = input
+    end
+end)
+
+RunService.RenderStepped:Connect(function()
+    if dragging and dragInput then update(dragInput) end
+end)
+
 toggleBtn.MouseButton1Click:Connect(function() window:Toggle() end)
 
 window:Toggle(true)
-StarterGui:SetCore("SendNotification", {Title = "NEKO BF", Text = "啟動成功～歡迎使用貓腳本", Duration = 10})
+StarterGui:SetCore("SendNotification", {Title = "貓貓", Text = "啟動成功～歡迎使用貓腳本", Duration = 10})
