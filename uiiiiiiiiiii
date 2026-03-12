@@ -14,8 +14,9 @@ local function Tween(obj, info, prop)
     return t
 end
 
+-- 配色與樣式定義
 local C = {
-    Accent     = Color3.fromRGB(255, 255, 255), 
+    Accent     = Color3.fromRGB(255, 105, 180), -- 貓貓粉 (原本是純白，我加點粉色更有貓貓感)
     MainBG     = Color3.fromRGB(15, 15, 15),    
     SideBG     = Color3.fromRGB(22, 22, 22),    
     BtnBG      = Color3.fromRGB(30, 30, 30),    
@@ -28,84 +29,95 @@ local C = {
 }
 
 function library.new(name)
-    local old = playerGui:FindFirstChild("Premium_UI_V3")
+    -- 核心修正：銷毀舊的 UI，防止重複執行導致疊加
+    local old = playerGui:FindFirstChild("Neko_Premium_v3")
     if old then old:Destroy() end
 
     local sg = Instance.new("ScreenGui", playerGui)
-    sg.Name = "Premium_UI_V3"
+    sg.Name = "Neko_Premium_v3"
     sg.ResetOnSpawn = false
 
     local Main = Instance.new("Frame", sg)
-    Main.Size = UDim2.new(0, 600, 0, 400) -- 為了三層架構稍微加大空間
-    Main.Position = UDim2.new(0.5, -300, 0.5, -200)
+    Main.Size = UDim2.new(0, 600, 0, 420) -- 加高一點，讓視覺更開闊
+    Main.Position = UDim2.new(0.5, -300, 0.5, -210)
     Main.BackgroundColor3 = C.MainBG
     Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 10)
     local MainStroke = Instance.new("UIStroke", Main)
     MainStroke.Thickness = 1; MainStroke.Color = C.Stroke; MainStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
 
-    -- [左上角名字區]
+    -- [1. 左上角名字區 (Name Box)]
     local NameBox = Instance.new("Frame", Main)
     NameBox.Size = UDim2.new(0, 150, 0, 50)
     NameBox.BackgroundColor3 = C.SideBG
     Instance.new("UICorner", NameBox).CornerRadius = UDim.new(0, 10)
+    
     local Title = Instance.new("TextLabel", NameBox)
     Title.Size = UDim2.new(1, 0, 1, 0); Title.Text = name:upper(); Title.TextColor3 = C.Accent; Title.Font = Enum.Font.GothamBold; Title.TextSize = 16; Title.BackgroundTransparency = 1
 
-    -- [頂部主分頁列]
+    -- [2. 右上方主分頁容器 (Top Tabs)]
     local TopBar = Instance.new("Frame", Main)
     TopBar.Size = UDim2.new(1, -160, 0, 50); TopBar.Position = UDim2.new(0, 155, 0, 0); TopBar.BackgroundTransparency = 1
     local tl = Instance.new("UIListLayout", TopBar); tl.FillDirection = Enum.FillDirection.Horizontal; tl.VerticalAlignment = Enum.VerticalAlignment.Center; tl.Padding = UDim.new(0, 8)
 
-    -- [左側次分頁列]
+    -- [3. 左側次分頁容器 (Side Tabs)]
     local SideBar = Instance.new("Frame", Main)
     SideBar.Size = UDim2.new(0, 150, 1, -60); SideBar.Position = UDim2.new(0, 0, 0, 55); SideBar.BackgroundColor3 = C.SideBG
     Instance.new("UICorner", SideBar).CornerRadius = UDim.new(0, 10)
+    
+    -- 核心修正：加入自動佈局和 UIPadding，讓按鈕看起來整齊
     local sl = Instance.new("UIListLayout", SideBar); sl.Padding = UDim.new(0, 4); sl.HorizontalAlignment = Enum.HorizontalAlignment.Center
     Instance.new("UIPadding", SideBar).PaddingTop = UDim.new(0, 8)
 
-    -- [右側主內容區]
+    -- [4. 右下主內容區 (Pages Container)]
     local Pages = Instance.new("Frame", Main)
     Pages.Size = UDim2.new(1, -170, 1, -70); Pages.Position = UDim2.new(0, 160, 0, 60); Pages.BackgroundTransparency = 1
 
     local window = { currentMain = nil, currentSub = nil }
 
+    -- [核心函數]：創建主分頁 (MainTab)
     function window:MainTab(mName)
-        local MBtn = Instance.new("TextButton", TopBar)
-        MBtn.Size = UDim2.new(0, 90, 0, 34); MBtn.BackgroundColor3 = C.BtnBG; MBtn.BackgroundTransparency = 1; MBtn.Text = mName; MBtn.TextColor3 = C.TextDim; MBtn.Font = Enum.Font.GothamBold; MBtn.TextSize = 13
-        Instance.new("UICorner", MBtn).CornerRadius = UDim.new(0, 6)
+        local mBtn = Instance.new("TextButton", TopBar)
+        mBtn.Size = UDim2.new(0, 95, 0, 34); mBtn.BackgroundColor3 = C.BtnBG; mBtn.BackgroundTransparency = 1; mBtn.Text = mName; mBtn.TextColor3 = C.TextDim; mBtn.Font = Enum.Font.GothamBold; mBtn.TextSize = 13
+        Instance.new("UICorner", mBtn).CornerRadius = UDim.new(0, 6)
 
-        local subList = {}
+        local subList = {} -- 存放該主分頁下的所有 SubTab 對象
+
         local mainInst = {}
 
+        -- [核心函數]：創建次分頁 (SubTab)
         function mainInst:SubTab(sName)
-            local SBtn = Instance.new("TextButton", SideBar)
-            SBtn.Size = UDim2.new(1, -16, 0, 36); SBtn.BackgroundColor3 = C.BtnBG; SBtn.BackgroundTransparency = 1; SBtn.Text = sName; SBtn.TextColor3 = C.TextDim; SBtn.Font = Enum.Font.GothamMedium; SBtn.TextSize = 13; SBtn.Visible = false
-            Instance.new("UICorner", SBtn).CornerRadius = UDim.new(0, 6)
+            local sBtn = Instance.new("TextButton", SideBar)
+            sBtn.Size = UDim2.new(1, -16, 0, 36); sBtn.BackgroundColor3 = C.BtnBG; sBtn.BackgroundTransparency = 1; sBtn.Text = sName; sBtn.TextColor3 = C.TextDim; sBtn.Font = Enum.Font.GothamMedium; sBtn.TextSize = 13; sBtn.Visible = false -- 初始隱藏
+            Instance.new("UICorner", sBtn).CornerRadius = UDim.new(0, 6)
 
-            local Indicator = Instance.new("Frame", SBtn)
+            -- 保留你最愛的白色 Indicator 側邊條
+            local Indicator = Instance.new("Frame", sBtn)
             Indicator.Size = UDim2.new(0, 2, 0, 0); Indicator.Position = UDim2.new(0, 0, 0.5, 0); Indicator.AnchorPoint = Vector2.new(0, 0.5); Indicator.BackgroundColor3 = C.Accent; Indicator.BorderSizePixel = 0
 
+            -- 建立 Page (ScrollingFrame)
             local Page = Instance.new("ScrollingFrame", Pages)
             Page.Size = UDim2.new(1, 0, 1, 0); Page.ScrollBarThickness = 0; Page.BackgroundTransparency = 1; Page.Visible = false
-            local pl = Instance.new("UIListLayout", Page); pl.Padding = UDim.new(0, 10)
+            local pl = Instance.new("UIListLayout", Page); pl.Padding = UDim.new(0, 10); pl.SortOrder = Enum.SortOrder.LayoutOrder
             pl:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function() Page.CanvasSize = UDim2.new(0, 0, 0, pl.AbsoluteContentSize.Y + 10) end)
 
-            table.insert(subList, {btn = SBtn, page = Page, indicator = Indicator})
+            table.insert(subList, {btn = sBtn, page = Page, indicator = Indicator})
 
-            SBtn.MouseButton1Click:Connect(function()
+            -- 次分頁點擊邏輯
+            sBtn.MouseButton1Click:Connect(function()
                 if window.currentSub then
                     window.currentSub.page.Visible = false
-                    Tween(window.currentSub.btn, {0.2}, {TextColor3 = C.TextDim})
+                    Tween(window.currentSub.btn, {0.2}, {TextColor3 = C.TextDim, BackgroundTransparency = 1})
                     Tween(window.currentSub.indicator, {0.2}, {Size = UDim2.new(0, 2, 0, 0)})
                 end
                 Page.Visible = true
-                Tween(SBtn, {0.2}, {TextColor3 = C.TextHi})
+                Tween(sBtn, {0.2}, {TextColor3 = C.TextHi, BackgroundTransparency = 0})
                 Tween(Indicator, {0.2}, {Size = UDim2.new(0, 2, 0, 18)})
-                window.currentSub = {btn = SBtn, page = Page, indicator = Indicator}
+                window.currentSub = {btn = sBtn, page = Page, indicator = Indicator}
             end)
 
-            local tab = {} -- 這裡開始繼承你原本的所有組件邏輯
-            function tab:Section(txt)
+            -- 繼承外部功能組件 (Button, Toggle, Textbox, List, Section)
+            local subObj = {}
+            function subObj:Section(txt)
                 local Sec = Instance.new("Frame", Page); Sec.Name = "Section_"..txt; Sec.Size = UDim2.new(1, -10, 0, 45); Sec.BackgroundColor3 = C.Glass; Instance.new("UICorner", Sec).CornerRadius = UDim.new(0, 8); Instance.new("UIStroke", Sec).Color = C.Stroke
                 local T = Instance.new("TextLabel", Sec); T.Size = UDim2.new(1, -20, 0, 30); T.Position = UDim2.new(0, 10, 0, 5); T.Text = txt:upper(); T.TextColor3 = C.TextDim; T.Font = Enum.Font.GothamBold; T.TextSize = 11; T.TextXAlignment = Enum.TextXAlignment.Left; T.BackgroundTransparency = 1
                 local Box = Instance.new("Frame", Sec); Box.Name = "Container"; Box.Size = UDim2.new(1, -20, 0, 0); Box.Position = UDim2.new(0, 10, 0, 35); Box.BackgroundTransparency = 1
@@ -114,8 +126,7 @@ function library.new(name)
 
                 local e = {}
                 function e:Button(t, cb)
-                    local b = Instance.new("TextButton", Box); b.Size = UDim2.new(1, 0, 0, 34); b.BackgroundColor3 = C.BtnBG; b.Text = t; b.TextColor3 = C.TextHi; b.Font = Enum.Font.GothamMedium; b.TextSize = 13
-                    Instance.new("UICorner", b).CornerRadius = UDim.new(0, 6)
+                    local b = Instance.new("TextButton", Box); b.Size = UDim2.new(1, 0, 0, 34); b.BackgroundColor3 = C.BtnBG; b.Text = t; b.TextColor3 = C.TextHi; b.Font = Enum.Font.GothamMedium; b.TextSize = 13; Instance.new("UICorner", b).CornerRadius = UDim.new(0, 6)
                     b.MouseButton1Click:Connect(function() if cb then cb() end end)
                     return b
                 end
@@ -131,23 +142,18 @@ function library.new(name)
                         Tween(d, {0.2}, {BackgroundColor3 = s and Color3.fromRGB(60,60,60) or C.DotOff})
                         if cb then cb(s) end
                     end)
-                    return {Set = function(_, v) 
-                        s = v
-                        Tween(dot, {0.2}, {Position = s and UDim2.new(0, 16, 0.5, -5) or UDim2.new(0, 2, 0.5, -5)})
-                        Tween(d, {0.2}, {BackgroundColor3 = s and Color3.fromRGB(60,60,60) or C.DotOff})
-                    end}
+                    return {Set = function(_, v) s = v; Tween(dot, {0.2}, {Position = s and UDim2.new(0, 16, 0.5, -5) or UDim2.new(0, 2, 0.5, -5)}); Tween(d, {0.2}, {BackgroundColor3 = s and Color3.fromRGB(60,60,60) or C.DotOff}) end}
                 end
 
                 function e:Textbox(p, d, cb)
-                    local b = Instance.new("TextBox", Box); b.Size = UDim2.new(1, 0, 0, 34); b.BackgroundColor3 = C.BtnBG; b.Text = d or ""; b.PlaceholderText = p; b.TextColor3 = C.TextHi; b.PlaceholderColor3 = C.TextDim; b.Font = Enum.Font.GothamMedium; b.TextSize = 13
-                    Instance.new("UICorner", b).CornerRadius = UDim.new(0, 6)
+                    local b = Instance.new("TextBox", Box); b.Size = UDim2.new(1, 0, 0, 34); b.BackgroundColor3 = C.BtnBG; b.Text = d or ""; b.PlaceholderText = p; b.TextColor3 = C.TextHi; b.PlaceholderColor3 = C.TextDim; b.Font = Enum.Font.GothamMedium; b.TextSize = 13; Instance.new("UICorner", b).CornerRadius = UDim.new(0, 6)
                     b.FocusLost:Connect(function() if cb then cb(b.Text) end end)
                     return b
                 end
                 return e
             end
 
-            function tab:List(txt, data_func, select_cb)
+            function subObj:List(txt, data_func, select_cb)
                 local sec_elements = self:Section(txt)
                 local realBox
                 for _, v in pairs(Page:GetChildren()) do if v.Name == "Section_" .. txt then realBox = v:FindFirstChild("Container") break end end
@@ -161,19 +167,37 @@ function library.new(name)
                 Refresh()
                 return {Refresh = Refresh}
             end
-            return tab
+            return subObj
         end
 
-        MBtn.MouseButton1Click:Connect(function()
+        -- [核心修正]：主分頁點擊邏輯 - 解決按鈕疊加
+        mBtn.MouseButton1Click:Connect(function()
             if window.currentMain then
+                -- 隱藏前一個主分頁的按鈕與頁面
                 Tween(window.currentMain.btn, {0.2}, {TextColor3 = C.TextDim})
                 for _, item in pairs(window.currentMain.subs) do item.btn.Visible = false; item.page.Visible = false end
             end
-            Tween(MBtn, {0.2}, {TextColor3 = C.TextHi})
+            
+            Tween(mBtn, {0.2}, {TextColor3 = C.TextHi})
+            
+            -- 【修正點】：切換主分頁時，強制先把 SideBar 裡所有舊的 SubTab 按鈕隱藏
+            for _, child in pairs(SideBar:GetChildren()) do
+                if child:IsA("TextButton") then
+                    child.Visible = false 
+                end
+            end
+            
+            -- 顯示當前主分頁的 SubTab 按鈕
             for _, item in pairs(subList) do item.btn.Visible = true end
-            if subList[1] then subList[1].btn:MouseButton1Click() end
-            window.currentMain = {btn = MBtn, subs = subList}
+            
+            -- 自動觸發該主分頁的第一個子分頁
+            if subList[1] then 
+                subList[1].btn:MouseButton1Click() 
+            end
+            
+            window.currentMain = {btn = mBtn, subs = subList}
         end)
+
         return mainInst
     end
 
