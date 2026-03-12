@@ -133,14 +133,19 @@ function library.new(name)
             function subObj:List(txt, data_func, select_cb)
                 local sec_elements = self:Section(txt)
                 local realBox
-                for _, v in pairs(Page:GetChildren()) do if v.Name == "Section_" .. txt then realBox = v:FindFirstChild("Container") break end end
-                local function Refresh()
-                    if not realBox then return end
-                    for _, child in pairs(realBox:GetChildren()) do if child:IsA("TextButton") then child:Destroy() end end
-                    sec_elements:Button("🔄 重新掃描名單", Refresh).TextColor3 = C.Accent
-                    for _, n in pairs(data_func()) do sec_elements:Button(n, function() if select_cb then select_cb(n) end end) end
+                local function findContainer()
+                    for _, v in pairs(Page:GetChildren()) do if v.Name == "Section_" .. txt then return v:FindFirstChild("Container") end end
                 end
-                Refresh()
+                local function Refresh()
+                    realBox = realBox or findContainer()
+                    if realBox then
+                        for _, child in pairs(realBox:GetChildren()) do if child:IsA("TextButton") then child:Destroy() end end
+                        local refBtn = sec_elements:Button("🔄 重新掃描名單", Refresh)
+                        refBtn.TextColor3 = C.Accent
+                        for _, n in pairs(data_func()) do sec_elements:Button(n, function() if select_cb then select_cb(n) end end) end
+                    end
+                end
+                task.delay(0.2, Refresh)
                 return {Refresh = Refresh}
             end
             return subObj
