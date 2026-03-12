@@ -1,11 +1,7 @@
 local library = {}
-
-if not game:IsLoaded() then game.Loaded:Wait() end
-
 local services = setmetatable({}, { __index = function(_, k) return game:GetService(k) end })
 local ts = services.TweenService
-local players = services.Players
-local lplr = players.LocalPlayer or players:GetPropertyChangedSignal("LocalPlayer"):Wait()
+local lplr = services.Players.LocalPlayer
 local playerGui = lplr:WaitForChild("PlayerGui")
 
 local function Tween(obj, info, prop)
@@ -14,145 +10,126 @@ local function Tween(obj, info, prop)
     return t
 end
 
--- 配色與樣式定義
 local C = {
-    Accent     = Color3.fromRGB(255, 105, 180), -- 貓貓粉 (原本是純白，我加點粉色更有貓貓感)
-    MainBG     = Color3.fromRGB(15, 15, 15),    
-    SideBG     = Color3.fromRGB(22, 22, 22),    
-    BtnBG      = Color3.fromRGB(30, 30, 30),    
-    Text       = Color3.fromRGB(170, 170, 170), 
-    TextDim    = Color3.fromRGB(90, 90, 90),    
+    Accent     = Color3.fromRGB(255, 105, 180),
+    MainBG     = Color3.fromRGB(10, 10, 10),    
+    BtnBG      = Color3.fromRGB(255, 255, 255), 
+    Text       = Color3.fromRGB(150, 150, 150), 
     TextHi     = Color3.fromRGB(255, 255, 255), 
-    Stroke     = Color3.fromRGB(45, 45, 45),    
-    DotOff     = Color3.fromRGB(40, 40, 40),    
-    Glass      = Color3.fromRGB(25, 25, 25),    
 }
 
 function library.new(name)
-    -- 核心修正：銷毀舊的 UI，防止重複執行導致疊加
-    local old = playerGui:FindFirstChild("Neko_Premium_v3")
+    local old = playerGui:FindFirstChild("yuzia_X")
     if old then old:Destroy() end
 
     local sg = Instance.new("ScreenGui", playerGui)
-    sg.Name = "Neko_Premium_v3"
+    sg.Name = "yuzia_X"
     sg.ResetOnSpawn = false
 
     local Main = Instance.new("Frame", sg)
-    Main.Size = UDim2.new(0, 600, 0, 420) -- 加高一點，讓視覺更開闊
-    Main.Position = UDim2.new(0.5, -300, 0.5, -210)
+    Main.Size = UDim2.new(0, 620, 0, 440)
+    Main.Position = UDim2.new(0.5, -310, 0.5, -220)
     Main.BackgroundColor3 = C.MainBG
-    Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 10)
+    Main.BackgroundTransparency = 0.15
+    Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 12)
     local MainStroke = Instance.new("UIStroke", Main)
-    MainStroke.Thickness = 1; MainStroke.Color = C.Stroke; MainStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+    MainStroke.Thickness = 1.2; MainStroke.Color = C.Accent; MainStroke.Transparency = 0.6
 
-    -- [1. 左上角名字區 (Name Box)]
     local NameBox = Instance.new("Frame", Main)
-    NameBox.Size = UDim2.new(0, 150, 0, 50)
-    NameBox.BackgroundColor3 = C.SideBG
-    Instance.new("UICorner", NameBox).CornerRadius = UDim.new(0, 10)
-    
+    NameBox.Size = UDim2.new(0, 150, 0, 50); NameBox.BackgroundTransparency = 1
     local Title = Instance.new("TextLabel", NameBox)
-    Title.Size = UDim2.new(1, 0, 1, 0); Title.Text = name:upper(); Title.TextColor3 = C.Accent; Title.Font = Enum.Font.GothamBold; Title.TextSize = 16; Title.BackgroundTransparency = 1
+    Title.Size = UDim2.new(1, 0, 1, 0); Title.Text = name; Title.TextColor3 = C.Accent; Title.Font = Enum.Font.GothamBold; Title.TextSize = 18; Title.BackgroundTransparency = 1
 
-    -- [2. 右上方主分頁容器 (Top Tabs)]
     local TopBar = Instance.new("Frame", Main)
     TopBar.Size = UDim2.new(1, -160, 0, 50); TopBar.Position = UDim2.new(0, 155, 0, 0); TopBar.BackgroundTransparency = 1
-    local tl = Instance.new("UIListLayout", TopBar); tl.FillDirection = Enum.FillDirection.Horizontal; tl.VerticalAlignment = Enum.VerticalAlignment.Center; tl.Padding = UDim.new(0, 8)
+    local tl = Instance.new("UIListLayout", TopBar); tl.FillDirection = Enum.FillDirection.Horizontal; tl.VerticalAlignment = Enum.VerticalAlignment.Center; tl.Padding = UDim.new(0, 15)
 
-    -- [3. 左側次分頁容器 (Side Tabs)]
     local SideBar = Instance.new("Frame", Main)
-    SideBar.Size = UDim2.new(0, 150, 1, -60); SideBar.Position = UDim2.new(0, 0, 0, 55); SideBar.BackgroundColor3 = C.SideBG
+    SideBar.Size = UDim2.new(0, 150, 1, -70); SideBar.Position = UDim2.new(0, 10, 0, 60); SideBar.BackgroundColor3 = Color3.fromRGB(0,0,0); SideBar.BackgroundTransparency = 0.6
     Instance.new("UICorner", SideBar).CornerRadius = UDim.new(0, 10)
-    
-    -- 核心修正：加入自動佈局和 UIPadding，讓按鈕看起來整齊
-    local sl = Instance.new("UIListLayout", SideBar); sl.Padding = UDim.new(0, 4); sl.HorizontalAlignment = Enum.HorizontalAlignment.Center
-    Instance.new("UIPadding", SideBar).PaddingTop = UDim.new(0, 8)
+    local sl = Instance.new("UIListLayout", SideBar); sl.Padding = UDim.new(0, 5); sl.HorizontalAlignment = Enum.HorizontalAlignment.Center
+    Instance.new("UIPadding", SideBar).PaddingTop = UDim.new(0, 10)
 
-    -- [4. 右下主內容區 (Pages Container)]
     local Pages = Instance.new("Frame", Main)
-    Pages.Size = UDim2.new(1, -170, 1, -70); Pages.Position = UDim2.new(0, 160, 0, 60); Pages.BackgroundTransparency = 1
+    Pages.Size = UDim2.new(1, -180, 1, -70); Pages.Position = UDim2.new(0, 170, 0, 60); Pages.BackgroundTransparency = 1
 
     local window = { currentMain = nil, currentSub = nil }
 
-    -- [核心函數]：創建主分頁 (MainTab)
+    function window:Toggle(state)
+        if state ~= nil then sg.Enabled = state else sg.Enabled = not sg.Enabled end
+    end
+
     function window:MainTab(mName)
         local mBtn = Instance.new("TextButton", TopBar)
-        mBtn.Size = UDim2.new(0, 95, 0, 34); mBtn.BackgroundColor3 = C.BtnBG; mBtn.BackgroundTransparency = 1; mBtn.Text = mName; mBtn.TextColor3 = C.TextDim; mBtn.Font = Enum.Font.GothamBold; mBtn.TextSize = 13
-        Instance.new("UICorner", mBtn).CornerRadius = UDim.new(0, 6)
+        mBtn.Size = UDim2.new(0, 100, 0, 35); mBtn.BackgroundTransparency = 1; mBtn.Text = mName; mBtn.TextColor3 = C.Text; mBtn.Font = Enum.Font.GothamBold; mBtn.TextSize = 14
+        
+        local mLine = Instance.new("Frame", mBtn)
+        mLine.Size = UDim2.new(0, 0, 0, 2); mLine.Position = UDim2.new(0.5, 0, 1, -5); mLine.AnchorPoint = Vector2.new(0.5, 0); mLine.BackgroundColor3 = C.Accent; mLine.BorderSizePixel = 0
+        local mGlow = Instance.new("UIStroke", mLine); mGlow.Color = C.Accent; mGlow.Thickness = 2; mGlow.Transparency = 0.5
 
-        local subList = {} -- 存放該主分頁下的所有 SubTab 對象
-
+        local subList = {}
         local mainInst = {}
 
-        -- [核心函數]：創建次分頁 (SubTab)
         function mainInst:SubTab(sName)
             local sBtn = Instance.new("TextButton", SideBar)
-            sBtn.Size = UDim2.new(1, -16, 0, 36); sBtn.BackgroundColor3 = C.BtnBG; sBtn.BackgroundTransparency = 1; sBtn.Text = sName; sBtn.TextColor3 = C.TextDim; sBtn.Font = Enum.Font.GothamMedium; sBtn.TextSize = 13; sBtn.Visible = false -- 初始隱藏
-            Instance.new("UICorner", sBtn).CornerRadius = UDim.new(0, 6)
+            sBtn.Size = UDim2.new(1, -20, 0, 38); sBtn.BackgroundColor3 = C.BtnBG; sBtn.BackgroundTransparency = 0.95; sBtn.Text = sName; sBtn.TextColor3 = C.Text; sBtn.Font = Enum.Font.GothamMedium; sBtn.TextSize = 13; sBtn.Visible = false
+            Instance.new("UICorner", sBtn).CornerRadius = UDim.new(0, 8)
+            local sIndicator = Instance.new("Frame", sBtn)
+            sIndicator.Size = UDim2.new(0, 2, 0, 0); sIndicator.Position = UDim2.new(0, 0, 0.5, 0); sIndicator.AnchorPoint = Vector2.new(0, 0.5); sIndicator.BackgroundColor3 = C.Accent; sIndicator.BorderSizePixel = 0
 
-            -- 保留你最愛的白色 Indicator 側邊條
-            local Indicator = Instance.new("Frame", sBtn)
-            Indicator.Size = UDim2.new(0, 2, 0, 0); Indicator.Position = UDim2.new(0, 0, 0.5, 0); Indicator.AnchorPoint = Vector2.new(0, 0.5); Indicator.BackgroundColor3 = C.Accent; Indicator.BorderSizePixel = 0
-
-            -- 建立 Page (ScrollingFrame)
             local Page = Instance.new("ScrollingFrame", Pages)
             Page.Size = UDim2.new(1, 0, 1, 0); Page.ScrollBarThickness = 0; Page.BackgroundTransparency = 1; Page.Visible = false
-            local pl = Instance.new("UIListLayout", Page); pl.Padding = UDim.new(0, 10); pl.SortOrder = Enum.SortOrder.LayoutOrder
+            local pl = Instance.new("UIListLayout", Page); pl.Padding = UDim.new(0, 10)
             pl:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function() Page.CanvasSize = UDim2.new(0, 0, 0, pl.AbsoluteContentSize.Y + 10) end)
 
-            table.insert(subList, {btn = sBtn, page = Page, indicator = Indicator})
+            table.insert(subList, {btn = sBtn, page = Page, indicator = sIndicator})
 
-            -- 次分頁點擊邏輯
-            sBtn.MouseButton1Click:Connect(function()
+            local function activateSub()
                 if window.currentSub then
                     window.currentSub.page.Visible = false
-                    Tween(window.currentSub.btn, {0.2}, {TextColor3 = C.TextDim, BackgroundTransparency = 1})
-                    Tween(window.currentSub.indicator, {0.2}, {Size = UDim2.new(0, 2, 0, 0)})
+                    Tween(window.currentSub.btn, {0.3}, {BackgroundTransparency = 0.95, TextColor3 = C.Text})
+                    Tween(window.currentSub.indicator, {0.3}, {Size = UDim2.new(0, 2, 0, 0)})
                 end
                 Page.Visible = true
-                Tween(sBtn, {0.2}, {TextColor3 = C.TextHi, BackgroundTransparency = 0})
-                Tween(Indicator, {0.2}, {Size = UDim2.new(0, 2, 0, 18)})
-                window.currentSub = {btn = sBtn, page = Page, indicator = Indicator}
-            end)
+                Tween(sBtn, {0.3}, {BackgroundTransparency = 0.88, TextColor3 = C.TextHi})
+                Tween(sIndicator, {0.3}, {Size = UDim2.new(0, 2, 0, 18)})
+                window.currentSub = {btn = sBtn, page = Page, indicator = sIndicator}
+            end
+            sBtn.MouseButton1Click:Connect(activateSub)
 
-            -- 繼承外部功能組件 (Button, Toggle, Textbox, List, Section)
-            local subObj = {}
+            local subObj = { activate = activateSub }
             function subObj:Section(txt)
-                local Sec = Instance.new("Frame", Page); Sec.Name = "Section_"..txt; Sec.Size = UDim2.new(1, -10, 0, 45); Sec.BackgroundColor3 = C.Glass; Instance.new("UICorner", Sec).CornerRadius = UDim.new(0, 8); Instance.new("UIStroke", Sec).Color = C.Stroke
-                local T = Instance.new("TextLabel", Sec); T.Size = UDim2.new(1, -20, 0, 30); T.Position = UDim2.new(0, 10, 0, 5); T.Text = txt:upper(); T.TextColor3 = C.TextDim; T.Font = Enum.Font.GothamBold; T.TextSize = 11; T.TextXAlignment = Enum.TextXAlignment.Left; T.BackgroundTransparency = 1
+                local Sec = Instance.new("Frame", Page); Sec.Size = UDim2.new(1, -10, 0, 45); Sec.BackgroundColor3 = Color3.fromRGB(255,255,255); Sec.BackgroundTransparency = 0.97; Instance.new("UICorner", Sec).CornerRadius = UDim.new(0, 10)
+                local T = Instance.new("TextLabel", Sec); T.Size = UDim2.new(1, -20, 0, 30); T.Position = UDim2.new(0, 10, 0, 5); T.Text = txt:upper(); T.TextColor3 = C.Accent; T.Font = Enum.Font.GothamBold; T.TextSize = 11; T.TextXAlignment = Enum.TextXAlignment.Left; T.BackgroundTransparency = 1
                 local Box = Instance.new("Frame", Sec); Box.Name = "Container"; Box.Size = UDim2.new(1, -20, 0, 0); Box.Position = UDim2.new(0, 10, 0, 35); Box.BackgroundTransparency = 1
                 local bl = Instance.new("UIListLayout", Box); bl.Padding = UDim.new(0, 8)
                 bl:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function() Sec.Size = UDim2.new(1, -10, 0, bl.AbsoluteContentSize.Y + 45) end)
-
                 local e = {}
                 function e:Button(t, cb)
-                    local b = Instance.new("TextButton", Box); b.Size = UDim2.new(1, 0, 0, 34); b.BackgroundColor3 = C.BtnBG; b.Text = t; b.TextColor3 = C.TextHi; b.Font = Enum.Font.GothamMedium; b.TextSize = 13; Instance.new("UICorner", b).CornerRadius = UDim.new(0, 6)
+                    local b = Instance.new("TextButton", Box); b.Size = UDim2.new(1, 0, 0, 34); b.BackgroundColor3 = Color3.fromRGB(255,255,255); b.BackgroundTransparency = 0.92; b.Text = t; b.TextColor3 = C.TextHi; b.Font = Enum.Font.GothamMedium; b.TextSize = 13; Instance.new("UICorner", b).CornerRadius = UDim.new(0, 6)
                     b.MouseButton1Click:Connect(function() if cb then cb() end end)
                     return b
                 end
-
                 function e:Toggle(t, cb)
-                    local b = Instance.new("TextButton", Box); b.Size = UDim2.new(1, 0, 0, 34); b.BackgroundColor3 = C.BtnBG; b.Text = "  " .. t; b.TextColor3 = C.Text; b.Font = Enum.Font.GothamMedium; b.TextSize = 13; b.TextXAlignment = Enum.TextXAlignment.Left; Instance.new("UICorner", b).CornerRadius = UDim.new(0, 6)
-                    local d = Instance.new("Frame", b); d.Size = UDim2.new(0, 28, 0, 14); d.Position = UDim2.new(1, -38, 0.5, -7); d.BackgroundColor3 = C.DotOff; Instance.new("UICorner", d).CornerRadius = UDim.new(1, 0)
-                    local dot = Instance.new("Frame", d); dot.Size = UDim2.new(0, 10, 0, 10); dot.Position = UDim2.new(0, 2, 0.5, -5); dot.BackgroundColor3 = C.Accent; Instance.new("UICorner", dot).CornerRadius = UDim.new(1, 0)
+                    local b = Instance.new("TextButton", Box); b.Size = UDim2.new(1, 0, 0, 34); b.BackgroundTransparency = 1; b.Text = "  " .. t; b.TextColor3 = C.Text; b.Font = Enum.Font.GothamMedium; b.TextSize = 13; b.TextXAlignment = Enum.TextXAlignment.Left
+                    local d = Instance.new("Frame", b); d.Size = UDim2.new(0, 32, 0, 16); d.Position = UDim2.new(1, -40, 0.5, -8); d.BackgroundColor3 = Color3.fromRGB(40,40,40); Instance.new("UICorner", d).CornerRadius = UDim.new(1, 0)
+                    local dot = Instance.new("Frame", d); dot.Size = UDim2.new(0, 12, 0, 12); dot.Position = UDim2.new(0, 2, 0.5, -6); dot.BackgroundColor3 = Color3.fromRGB(150,150,150); Instance.new("UICorner", dot).CornerRadius = UDim.new(1, 0)
                     local s = false
                     b.MouseButton1Click:Connect(function()
                         s = not s
-                        Tween(dot, {0.2}, {Position = s and UDim2.new(0, 16, 0.5, -5) or UDim2.new(0, 2, 0.5, -5)})
-                        Tween(d, {0.2}, {BackgroundColor3 = s and Color3.fromRGB(60,60,60) or C.DotOff})
+                        Tween(dot, {0.25}, {Position = s and UDim2.new(0, 18, 0.5, -6) or UDim2.new(0, 2, 0.5, -6), BackgroundColor3 = s and C.Accent or Color3.fromRGB(150,150,150)})
+                        Tween(d, {0.25}, {BackgroundColor3 = s and Color3.fromRGB(60,40,50) or Color3.fromRGB(40,40,40)})
                         if cb then cb(s) end
                     end)
-                    return {Set = function(_, v) s = v; Tween(dot, {0.2}, {Position = s and UDim2.new(0, 16, 0.5, -5) or UDim2.new(0, 2, 0.5, -5)}); Tween(d, {0.2}, {BackgroundColor3 = s and Color3.fromRGB(60,60,60) or C.DotOff}) end}
+                    return {Set = function(_, v) s = v; Tween(dot, {0.2}, {Position = s and UDim2.new(0, 18, 0.5, -6) or UDim2.new(0, 2, 0.5, -6)}) end}
                 end
-
                 function e:Textbox(p, d, cb)
-                    local b = Instance.new("TextBox", Box); b.Size = UDim2.new(1, 0, 0, 34); b.BackgroundColor3 = C.BtnBG; b.Text = d or ""; b.PlaceholderText = p; b.TextColor3 = C.TextHi; b.PlaceholderColor3 = C.TextDim; b.Font = Enum.Font.GothamMedium; b.TextSize = 13; Instance.new("UICorner", b).CornerRadius = UDim.new(0, 6)
+                    local b = Instance.new("TextBox", Box); b.Size = UDim2.new(1, 0, 0, 34); b.BackgroundColor3 = Color3.fromRGB(0,0,0); b.BackgroundTransparency = 0.8; b.Text = d or ""; b.PlaceholderText = p; b.TextColor3 = C.TextHi; b.Font = Enum.Font.GothamMedium; b.TextSize = 13; Instance.new("UICorner", b).CornerRadius = UDim.new(0, 6)
                     b.FocusLost:Connect(function() if cb then cb(b.Text) end end)
                     return b
                 end
                 return e
             end
-
             function subObj:List(txt, data_func, select_cb)
                 local sec_elements = self:Section(txt)
                 local realBox
@@ -160,9 +137,8 @@ function library.new(name)
                 local function Refresh()
                     if not realBox then return end
                     for _, child in pairs(realBox:GetChildren()) do if child:IsA("TextButton") then child:Destroy() end end
-                    local ref = sec_elements:Button("🔄 重新掃描名單", Refresh); ref.TextColor3 = Color3.fromRGB(0, 255, 170)
-                    local list = data_func()
-                    for _, n in pairs(list) do sec_elements:Button(n, function() if select_cb then select_cb(n) end end) end
+                    sec_elements:Button("🔄 重新掃描名單", Refresh).TextColor3 = C.Accent
+                    for _, n in pairs(data_func()) do sec_elements:Button(n, function() if select_cb then select_cb(n) end end) end
                 end
                 Refresh()
                 return {Refresh = Refresh}
@@ -170,38 +146,35 @@ function library.new(name)
             return subObj
         end
 
-        -- [核心修正]：主分頁點擊邏輯 - 解決按鈕疊加
         mBtn.MouseButton1Click:Connect(function()
+            if window.currentMain and window.currentMain.btn == mBtn then return end
             if window.currentMain then
-                -- 隱藏前一個主分頁的按鈕與頁面
-                Tween(window.currentMain.btn, {0.2}, {TextColor3 = C.TextDim})
+                Tween(window.currentMain.btn, {0.3}, {TextColor3 = C.Text})
+                Tween(window.currentMain.line, {0.3}, {Size = UDim2.new(0, 0, 0, 2)})
                 for _, item in pairs(window.currentMain.subs) do item.btn.Visible = false; item.page.Visible = false end
             end
-            
-            Tween(mBtn, {0.2}, {TextColor3 = C.TextHi})
-            
-            -- 【修正點】：切換主分頁時，強制先把 SideBar 裡所有舊的 SubTab 按鈕隱藏
-            for _, child in pairs(SideBar:GetChildren()) do
-                if child:IsA("TextButton") then
-                    child.Visible = false 
+            Tween(mBtn, {0.3}, {TextColor3 = C.TextHi})
+            Tween(mLine, {0.3}, {Size = UDim2.new(0, 40, 0, 2)})
+            window.currentMain = {btn = mBtn, subs = subList, line = mLine}
+            task.defer(function()
+                for _, item in pairs(subList) do item.btn.Visible = true end
+                if subList[1] then 
+                    if window.currentSub then
+                        window.currentSub.page.Visible = false
+                        Tween(window.currentSub.btn, {0.3}, {BackgroundTransparency = 0.95, TextColor3 = C.Text})
+                        Tween(window.currentSub.indicator, {0.3}, {Size = UDim2.new(0, 2, 0, 0)})
+                    end
+                    local firstSub = subList[1]
+                    firstSub.page.Visible = true
+                    Tween(firstSub.btn, {0.3}, {BackgroundTransparency = 0.88, TextColor3 = C.TextHi})
+                    Tween(firstSub.indicator, {0.3}, {Size = UDim2.new(0, 2, 0, 18)})
+                    window.currentSub = firstSub
                 end
-            end
-            
-            -- 顯示當前主分頁的 SubTab 按鈕
-            for _, item in pairs(subList) do item.btn.Visible = true end
-            
-            -- 自動觸發該主分頁的第一個子分頁
-            if subList[1] then 
-                subList[1].btn:MouseButton1Click() 
-            end
-            
-            window.currentMain = {btn = mBtn, subs = subList}
+            end)
         end)
-
         return mainInst
     end
 
-    -- [拖動邏輯]
     local dragging, dragStart, startPos
     Main.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 then dragging = true; dragStart = input.Position; startPos = Main.Position end
